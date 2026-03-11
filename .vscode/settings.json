@@ -1,6 +1,4 @@
 {
-    "cSpell.words": [
-        "oxfmt",
-        "oxlint"
-    ]
+  "cSpell.words": ["oxfmt", "oxlint", "Phong", "threejs"],
+  "editor.formatOnSave": true
 }

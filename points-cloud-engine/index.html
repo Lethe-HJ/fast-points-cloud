@@ -1,11 +1,17 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <title>Title</title>
   </head>
   <body>
-    <canvas id="canvas" width="600" height="300"> 此浏览器不支持canvas </canvas>
+    <div>
+      webgl实现<canvas id="canvas1" width="600" height="300"> 此浏览器不支持canvas </canvas>
+    </div>
+    <div>
+      threejs标准<canvas id="canvas2" width="600" height="300"> 此浏览器不支持canvas </canvas>
+    </div>
     <script type="module" src="src/core/index.ts"></script>
+    <script type="module" src="src/threejs/index.ts"></script>
   </body>
 </html>

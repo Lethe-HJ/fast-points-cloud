@@ -24,13 +24,18 @@ interface AmbientLightConfig {
 interface PointLightConfig {
   color: string;
   position: Vec3;
+  /** constant, linear, quadratic；与 Three.js 一致时用 [1,0,0] 表示无距离衰减 */
   attenuation: [number, number, number];
+  /** 光源强度，与 Three.js PointLight.intensity 一致，默认 1 */
+  intensity?: number;
 }
 
 interface MaterialConfig {
   type: number;
   color: string;
   shininess?: number;
+  /** Phong 高光颜色，与 Three.js MeshPhongMaterial.specular 一致，默认白 #ffffff */
+  specular?: string;
 }
 
 interface SceneObjectBase {
@@ -58,6 +63,7 @@ interface Geometry {
 interface Material {
   shaderProgram: WebGLProgram;
   color: [number, number, number];
+  specular?: [number, number, number];
   attach(gl: WebGLRenderingContext): void;
 }
 
@@ -77,6 +83,7 @@ interface PointLight {
   position: Vec3;
   color: string;
   attenuation: [number, number, number];
+  intensity: number;
   attach(gl: WebGLRenderingContext, program: WebGLProgram): void;
 }
 
@@ -124,6 +131,8 @@ interface Scene {
   add(object: SceneChild): void;
 }
 
+const OUTPUT_SCALE = 0.12;
+
 // ============ Shaders ============
 const noneShader: ShaderSource = {
   vertex: /*glsl */ `
@@ -142,10 +151,12 @@ const noneShader: ShaderSource = {
     `,
   fragment: /*glsl */ `
       precision highp float;
-      varying vec4 v_color; // 从顶点着色器传来的颜色值
-      
+      varying vec4 v_color;
+      #define OUTPUT_SCALE ${OUTPUT_SCALE}
+      float linearToSrgb(float c) { return (c <= 0.0031308) ? c * 12.92 : 1.055 * pow(c, 1.0/2.4) - 0.055; }
+      vec3 linearToSrgb(vec3 c) { return vec3(linearToSrgb(c.r), linearToSrgb(c.g), linearToSrgb(c.b)); }
       void main() {
-          gl_FragColor = v_color;
+        gl_FragColor = vec4(linearToSrgb(v_color.rgb * OUTPUT_SCALE), v_color.a);
       }
     `,
 };
@@ -173,40 +184,38 @@ const lambertShader: ShaderSource = {
       uniform Material u_material;
   
       struct PointLight {
-        vec3 color; // 光源颜色
-        vec3 position; // 光源位置
-        float constant; // 光源常数衰减
-        float linear; // 光源线性衰减
-        float quadratic; // 光源二次衰减
+        vec3 color;
+        vec3 position;
+        float constant;
+        float linear;
+        float quadratic;
       };
-  
       uniform PointLight u_pointLight;
+      uniform float u_pointLightIntensity;
   
       void main() {
-        vec4 color = vec4(u_material.color, 1.0); // 物体表面的颜色
+        vec4 color = vec4(u_material.color, 1.0);
         vec4 vertexPosition = u_mvpMatrix * a_position;
-        vec4 worldPosition = u_modelMatrix * a_position; // 顶点的世界坐标
-        vec3 lightDirection = normalize(u_pointLight.position - worldPosition.xyz); // 点光源的方向
-        vec3 ambientColor = u_ambientLightColor * vec3(color); // 环境反射
+        vec4 worldPosition = u_modelMatrix * a_position;
+        vec3 lightDirection = normalize(u_pointLight.position - worldPosition.xyz);
+        vec3 ambientColor = u_ambientLightColor * vec3(color);
         vec3 transformedNormal = normalize(vec3(u_normalMatrix * vec4(vec3(a_normal), 0.0)));
-  
-        //  计算衰减
-        float dist = length(u_pointLight.position -  worldPosition.xyz);
+        float dist = length(u_pointLight.position - worldPosition.xyz);
         float attenuation = 1.0 / (u_pointLight.constant + u_pointLight.linear * dist + u_pointLight.quadratic * dist * dist);
-  
-        float dotDeg = max(dot(transformedNormal, lightDirection), 0.0); // 计算入射角 光线方向和法线方向的点积
-        vec3 diffuseColor = u_pointLight.color * vec3(color) * dotDeg; // 漫反射光的颜色
-        v_color = vec4(ambientColor + diffuseColor * attenuation, color.a);
+        float dotDeg = max(dot(transformedNormal, lightDirection), 0.0);
+        vec3 diffuseColor = u_pointLight.color * vec3(color) * dotDeg * attenuation * u_pointLightIntensity;
+        v_color = vec4(ambientColor + diffuseColor, color.a);
         gl_Position =  vertexPosition;
       }
     `,
   fragment: /*glsl */ `
       precision lowp float;
-  
       varying vec4 v_color;
-      
+      #define OUTPUT_SCALE ${OUTPUT_SCALE}
+      float linearToSrgb(float c) { return (c <= 0.0031308) ? c * 12.92 : 1.055 * pow(c, 1.0/2.4) - 0.055; }
+      vec3 linearToSrgb(vec3 c) { return vec3(linearToSrgb(c.r), linearToSrgb(c.g), linearToSrgb(c.b)); }
       void main() {
-        gl_FragColor = v_color;
+        gl_FragColor = vec4(linearToSrgb(v_color.rgb * OUTPUT_SCALE), v_color.a);
       }
     `,
 };
@@ -248,42 +257,34 @@ const phongShader: ShaderSource = {
         vec3 color;
         float shininess;
       };
-  
       uniform Material u_material;
-  
+      uniform vec3 u_materialSpecular;
       struct PointLight {
-        vec3 color; // 光源颜色
-        vec3 position; // 光源位置
-        float constant; // 光源常数衰减
-        float linear; // 光源线性衰减
-        float quadratic; // 光源二次衰减
+        vec3 color;
+        vec3 position;
+        float constant;
+        float linear;
+        float quadratic;
       };
-  
       uniform PointLight u_pointLight;
-      
+      uniform float u_pointLightIntensity;
+      #define OUTPUT_SCALE ${OUTPUT_SCALE}
+      float linearToSrgb(float c) { return (c <= 0.0031308) ? c * 12.92 : 1.055 * pow(c, 1.0/2.4) - 0.055; }
+      vec3 linearToSrgb(vec3 c) { return vec3(linearToSrgb(c.r), linearToSrgb(c.g), linearToSrgb(c.b)); }
       void main() {
-  
-        // 环境光
         vec3 ambient = u_ambientLightColor * vec3(u_material.color);
-  
-        // 漫反射光
         vec3 norm = normalize(v_normal);
         vec3 lightDir = normalize(u_pointLight.position - v_fragPos);
         float diff = max(dot(norm, lightDir), 0.0);
-        vec3 diffuse = diff * u_pointLight.color;
-  
-        // 高光
+        vec3 diffuse = diff * u_pointLight.color * vec3(u_material.color);
         vec3 viewDir = normalize(u_cameraPosition - v_fragPos);
         vec3 reflectDir = reflect(-lightDir, norm);
-        float spec = pow(max(dot(viewDir, reflectDir), 0.0), u_material.shininess); // 32是高光系数，可调整
-        vec3 shininess = u_pointLight.color * spec;
-    
-        // 计算衰减
+        float spec = pow(max(dot(viewDir, reflectDir), 0.0), u_material.shininess);
+        vec3 specular = u_materialSpecular * u_pointLight.color * spec;
         float dist = length(u_pointLight.position - v_fragPos);
         float attenuation = 1.0 / (u_pointLight.constant + u_pointLight.linear * dist + u_pointLight.quadratic * dist * dist);
-        
-        vec3 result = (ambient + (diffuse + shininess) * attenuation) * vec3(u_material.color);
-        gl_FragColor = vec4(result, 1.0);
+        vec3 result = ambient + (diffuse + specular) * attenuation * u_pointLightIntensity;
+        gl_FragColor = vec4(linearToSrgb(result * OUTPUT_SCALE), 1.0);
       }
     `,
 };
@@ -696,8 +697,10 @@ function createAmbientLight(config: AmbientLightConfig): AmbientLight {
 
 function createPointLight(pointLight: PointLightConfig): PointLight {
   const _color = color.hexToRgbNormalized(pointLight.color);
+  const intensity = pointLight.intensity ?? 1;
   return {
     ...pointLight,
+    intensity,
     name: "PointLight",
     attach(gl: WebGLRenderingContext, program: WebGLProgram) {
       const locPos = gl.getUniformLocation(program, "u_pointLight.position");
@@ -705,11 +708,13 @@ function createPointLight(pointLight: PointLightConfig): PointLight {
       const locC = gl.getUniformLocation(program, "u_pointLight.constant");
       const locL = gl.getUniformLocation(program, "u_pointLight.linear");
       const locQ = gl.getUniformLocation(program, "u_pointLight.quadratic");
+      const locIntensity = gl.getUniformLocation(program, "u_pointLightIntensity");
       if (locPos) gl.uniform3fv(locPos, pointLight.position);
       if (locColor) gl.uniform3fv(locColor, _color);
       if (locC) gl.uniform1f(locC, pointLight.attenuation[0]);
       if (locL) gl.uniform1f(locL, pointLight.attenuation[1]);
       if (locQ) gl.uniform1f(locQ, pointLight.attenuation[2]);
+      if (locIntensity) gl.uniform1f(locIntensity, intensity);
     },
   };
 }
@@ -750,9 +755,14 @@ function createMaterial(config: MaterialConfig, gl: WebGLRenderingContext): Mate
   const shaderProgram = createShaderProgram(gl, vertex, fragment);
   if (!shaderProgram) throw new Error("Failed to create shader program");
   const _color = color.hexToRgbNormalized(config.color);
+  const _specular =
+    config.specular != null
+      ? color.hexToRgbNormalized(config.specular)
+      : ([1, 1, 1] as [number, number, number]);
   return {
     shaderProgram,
     color: _color,
+    specular: config.type === MaterialType.Phong ? _specular : undefined,
     attach(gl: WebGLRenderingContext) {
       gl.useProgram(shaderProgram);
       const locColor = gl.getUniformLocation(shaderProgram, "u_material.color");
@@ -760,6 +770,8 @@ function createMaterial(config: MaterialConfig, gl: WebGLRenderingContext): Mate
       if (config.type === MaterialType.Phong && config.shininess != null) {
         const locShininess = gl.getUniformLocation(shaderProgram, "u_material.shininess");
         if (locShininess) gl.uniform1f(locShininess, config.shininess);
+        const locSpecular = gl.getUniformLocation(shaderProgram, "u_materialSpecular");
+        if (locSpecular && this.specular) gl.uniform3fv(locSpecular, this.specular);
       }
     },
   };
@@ -923,6 +935,7 @@ interface Renderer {
 
 function createRenderer(gl: WebGLRenderingContext): Renderer {
   gl.enable(gl.DEPTH_TEST);
+  gl.clearColor(1, 1, 1, 1); // 与 Three.js scene.background 白色一致
   return {
     render(scene: Scene, camera: Camera) {
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -943,7 +956,7 @@ function createRenderer(gl: WebGLRenderingContext): Renderer {
   };
 }
 
-const canvas = document.getElementById("canvas") as HTMLCanvasElement | null;
+const canvas = document.getElementById("canvas1") as HTMLCanvasElement | null;
 if (!canvas) throw new Error("Canvas element not found");
 const gl = canvas.getContext("webgl");
 if (!gl) throw new Error("WebGL not supported");
@@ -955,11 +968,14 @@ const ambient_light = createAmbientLight({
 }); // 定义环境光 实际上就是一些uniform 待传入到着色器
 scene.add(ambient_light);
 
+// 以 Three.js 为标准：PointLight intensity=2, distance=0, decay=0（无距离衰减）
+// 对应 WebGL：attenuation [1,0,0] 使 attenuation=1，intensity=2
 const point_light = createPointLight({
   color: "#ffffff",
   position: [2.0, 6.0, 2.0],
-  attenuation: [0.5, 0.01, 0.032],
-}); // 定义点光源  实际上就是一些uniform 待传入到着色器中
+  attenuation: [1, 0, 0],
+  intensity: 2,
+});
 scene.add(point_light);
 
 const camera = createCamera({
@@ -1012,14 +1028,16 @@ const indices = new Uint8Array([
 
 const geometry = createGeometry(vertices, normals, indices); // 定义物体 实际上就是待传入到着色器中的点数据面数据
 
+// 与 Three.js 一致：Phong 绿、高光白、shininess 100
 const material1 = createMaterial(
   {
     type: MaterialType.Phong,
     color: "#00FF00",
+    specular: "#ffffff",
     shininess: 100.0,
   },
   gl,
-); // 定义材质 实际上就是着色器
+);
 
 const mesh1 = createMesh(geometry, material1); // Mesh的实质就是将几何体和材质绑定成一组 用材质指定的着色器 绘制一次这个几何体
 mesh1.setPosition(-2, 0, 0);
