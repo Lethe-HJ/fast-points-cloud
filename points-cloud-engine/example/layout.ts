@@ -3,6 +3,8 @@ import { customElement, property, state } from "lit/decorators.js";
 import "./content";
 import { demos } from "./config";
 
+const LAST_DEMO_KEY = "last-demo-id";
+
 export interface DemoInfo {
   id: string;
   name: string;
@@ -15,7 +17,8 @@ export interface DemoInfo {
 
 @customElement("demo-layout")
 export class DemoLayout extends LitElement {
-  @property({ type: String }) activeId = "demo1";
+  @property({ type: String }) activeId =
+    localStorage.getItem(LAST_DEMO_KEY) ?? "demo1";
   @state() private demoItems: DemoInfo[] = [];
 
   static styles = css`
@@ -94,6 +97,7 @@ export class DemoLayout extends LitElement {
 
   private handleNavClick(item: DemoInfo) {
     this.activeId = item.id;
+    localStorage.setItem(LAST_DEMO_KEY, item.id);
   }
 
   protected firstUpdated() {

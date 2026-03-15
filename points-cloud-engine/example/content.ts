@@ -2,9 +2,12 @@ import { LitElement, html, css } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import type { DemoInfo } from "./layout";
 
+const LAST_DEMO_KEY = "last-demo-id";
+
 @customElement("demo-content")
 export class DemoContent extends LitElement {
-  @property({ type: String }) demoId = "demo1";
+  @property({ type: String }) demoId =
+    localStorage.getItem(LAST_DEMO_KEY) ?? "demo1";
   @property({ attribute: false }) demoInfo: DemoInfo | null = null;
   @state() private loading = true;
   @state() private error: string | null = null;
@@ -111,6 +114,9 @@ export class DemoContent extends LitElement {
     if (changedProperties.has("demoInfo")) {
       this.loading = false;
       this.error = null;
+    }
+    if (changedProperties.has("demoId")) {
+      localStorage.setItem(LAST_DEMO_KEY, this.demoId);
     }
   }
 
