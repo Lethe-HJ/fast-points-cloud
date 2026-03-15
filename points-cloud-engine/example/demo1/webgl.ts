@@ -13,10 +13,25 @@ import {
   createScene,
 } from "points-cloud-engine";
 
+// 获取 canvas 元素
 const canvas = document.getElementById("canvas1") as HTMLCanvasElement | null;
 if (!canvas) throw new Error("Canvas element not found");
+
+// 设置 canvas 尺寸
+const width = 600;
+const height = 300;
+const dpr = window.devicePixelRatio || 1;
+
+canvas.width = width * dpr;
+canvas.height = height * dpr;
+canvas.style.width = `${width}px`;
+canvas.style.height = `${height}px`;
+
 const gl = canvas.getContext("webgl");
 if (!gl) throw new Error("WebGL not supported");
+
+// 设置 viewport
+gl.viewport(0, 0, canvas.width, canvas.height);
 
 const scene = createScene();
 
@@ -40,7 +55,7 @@ const camera = createCamera({
   target: [1.0, 0.0, 0.0],
   up: [0.0, 1.0, 0.0],
   fov: 90 * (Math.PI / 360),
-  aspect: canvas.width / canvas.height,
+  aspect: width / height,
   near: 0.1,
   far: 20,
 }); // 定义相机 实际上就是视图矩阵和投影矩阵
@@ -79,8 +94,8 @@ const normals = new Float32Array([
 
 // 面
 const indices = new Uint8Array([
-  0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16,
-  18, 19, 20, 21, 22, 20, 22, 23,
+  0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14,
+  15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23,
 ]);
 
 const geometry = createGeometry(vertices, normals, indices); // 定义物体 实际上就是待传入到着色器中的点数据面数据

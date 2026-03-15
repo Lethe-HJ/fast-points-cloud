@@ -20,11 +20,19 @@ import {
   Mesh,
 } from "three";
 
+// 获取 canvas 元素
 const canvas = document.getElementById("canvas2") as HTMLCanvasElement | null;
 if (!canvas) throw new Error("Canvas #canvas2 not found");
 
+// 设置 canvas 尺寸
 const width = 600;
 const height = 300;
+const dpr = window.devicePixelRatio || 1;
+
+canvas.width = width * dpr;
+canvas.height = height * dpr;
+canvas.style.width = `${width}px`;
+canvas.style.height = `${height}px`;
 
 // 与 core 一致：fov 90*(π/360)=45°, aspect 600/300=2, near 0.1, far 20
 const camera = new PerspectiveCamera(45, width / height, 0.1, 20);
@@ -69,7 +77,7 @@ scene.add(mesh2);
 
 const renderer = new WebGLRenderer({ canvas, antialias: true });
 renderer.setSize(width, height);
-renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setPixelRatio(dpr);
 renderer.setClearColor(0x000000);
 
 // 与 core 一致：旋转量为弧度，deg 变量从 1 累加到 20 后归零

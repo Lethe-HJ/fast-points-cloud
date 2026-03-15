@@ -5,10 +5,20 @@ import { defineConfig } from "vite";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  resolve: {
-    alias: {
-      // 将 points-cloud-engine / point-cloud-engine 解析到 core 入口
-      "points-cloud-engine": resolve(__dirname, "src/core/index.ts"),
+  build: {
+    lib: {
+      entry: resolve(__dirname, "src/core/index.ts"),
+      name: "PointsCloudEngine",
+      fileName: "points-cloud-engine",
+      formats: ["es", "umd"],
+    },
+    rollupOptions: {
+      external: ["three"],
+      output: {
+        globals: {
+          three: "THREE",
+        },
+      },
     },
   },
 });

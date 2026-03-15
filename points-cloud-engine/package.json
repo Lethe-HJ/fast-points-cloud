@@ -13,10 +13,10 @@
     }
   },
   "scripts": {
-    "dev": "vite",
+    "dev": "vite build --watch",
+    "example": "vite --config vite.example.config.ts",
     "build": "tsc && vite build",
     "preview": "vite preview",
-
     "lint": "oxlint src",
     "lint:fix": "oxlint src --fix",
     "format": "oxfmt src",
@@ -27,8 +27,9 @@
     "check": "sh scripts/check.sh"
   },
   "devDependencies": {
-    "points-cloud-engine": "workspace:*",
     "@types/three": "^0.170.0",
+    "lit": "^3.3.2",
+    "points-cloud-engine": "workspace:*",
     "typescript": "~5.9.3",
     "vite": "^8.0.0-beta.13"
   },
