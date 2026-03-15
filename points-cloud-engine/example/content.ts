@@ -115,35 +115,36 @@ export class DemoContent extends LitElement {
   }
 
   private generateIframeHtml(scriptPath: string, canvasId: string): string {
-    return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Demo</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    body {
-      width: 100%;
-      height: 100vh;
-      overflow: hidden;
-    }
-    canvas {
-      display: block;
-      width: 100%;
-      height: 100%;
-    }
-  </style>
-</head>
-<body>
-  <canvas id="${canvasId}"></canvas>
-  <script type="module" src="${scriptPath}"><\/script>
-</body>
-</html>`;
+    return /*html*/ `<!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Demo</title>
+          <style>
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            body {
+              width: 100%;
+              height: 100vh;
+              overflow: hidden;
+            }
+            canvas {
+              display: block;
+              width: 100%;
+              height: 100%;
+            }
+          </style>
+        </head>
+        <body>
+          <canvas id="${canvasId}"></canvas>
+          <script type="module" src="${scriptPath}"></script>
+        </body>
+      </html>
+    `;
   }
 
   render() {
@@ -194,11 +195,11 @@ export class DemoContent extends LitElement {
 
     const engineHtml = this.generateIframeHtml(
       `./${this.demoId}/${this.demoInfo.webglFile}`,
-      "canvas1"
+      "canvas1",
     );
     const threejsHtml = this.generateIframeHtml(
       `./${this.demoId}/${this.demoInfo.threejsFile}`,
-      "canvas2"
+      "canvas2",
     );
 
     return html`
@@ -206,7 +207,10 @@ export class DemoContent extends LitElement {
         <div class="demo-card">
           <div class="demo-title">WebGL Implementation</div>
           <div class="iframe-container">
-            <iframe .srcdoc="${engineHtml}" title="WebGL Implementation"></iframe>
+            <iframe
+              .srcdoc="${engineHtml}"
+              title="WebGL Implementation"
+            ></iframe>
           </div>
         </div>
         <div class="demo-card">

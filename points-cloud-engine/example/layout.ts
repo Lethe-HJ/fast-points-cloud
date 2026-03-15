@@ -1,6 +1,7 @@
 import { LitElement, html, css } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import "./content";
+import { demos } from "./config";
 
 export interface DemoInfo {
   id: string;
@@ -64,7 +65,6 @@ export class DemoLayout extends LitElement {
   private async loadDemoInfo() {
     try {
       // 动态导入 demo 信息
-      const demos = ["demo1"];
       const demoInfos: DemoInfo[] = [];
 
       for (const demoId of demos) {
