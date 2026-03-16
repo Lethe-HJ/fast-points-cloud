@@ -201,11 +201,11 @@ export class DemoContent extends LitElement {
 
     const engineHtml = this.generateIframeHtml(
       `./${this.demoId}/${this.demoInfo.webglFile}`,
-      "canvas1",
+      "canvas",
     );
     const threejsHtml = this.generateIframeHtml(
       `./${this.demoId}/${this.demoInfo.threejsFile}`,
-      "canvas2",
+      "canvas",
     );
 
     return html`

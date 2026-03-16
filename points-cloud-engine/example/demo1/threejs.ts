@@ -1,5 +1,5 @@
 /**
- * js 场景（标准参考），渲染到 #canvas2。
+ * js 场景（标准参考），渲染到 #canvas。
  * WebGL (core) 以本配置为准，保持相机/光照/材质参数一致以便对比效果。
  * - 相机：position(1,1,10) lookAt(1,0,0) fov 45° aspect 2 near 0.1 far 20
  * - 背景白；环境光 #494949；点光 #fff position(2,6,2) intensity=2 distance=0 decay=0
@@ -22,8 +22,8 @@ import {
 import Stats from "stats.js";
 
 // 获取 canvas 元素
-const canvas = document.getElementById("canvas2") as HTMLCanvasElement | null;
-if (!canvas) throw new Error("Canvas #canvas2 not found");
+const canvas = document.getElementById("canvas") as HTMLCanvasElement | null;
+if (!canvas) throw new Error("Canvas #canvas not found");
 
 // 设置 canvas 尺寸
 const width = 600;

@@ -1,4 +1,5 @@
 import { PerspectiveCamera, Vector2 } from "three";
+import { PerspectiveCamera as EPerspectiveCamera } from "points-cloud-engine";
 
 export interface CameraTransformConfig {
   initialDistance?: number;
@@ -6,10 +7,12 @@ export interface CameraTransformConfig {
   maxDistance?: number;
   rotationSpeed?: number;
   zoomSpeed?: number;
+  initialTheta?: number;
+  initialPhi?: number;
 }
 
 export class CameraTransformController {
-  private camera: PerspectiveCamera;
+  private camera: PerspectiveCamera | EPerspectiveCamera;
   private initialDistance: number;
   private minDistance: number;
   private maxDistance: number;
@@ -22,7 +25,10 @@ export class CameraTransformController {
   private theta = 0;
   private phi = 0;
 
-  constructor(camera: PerspectiveCamera, config: CameraTransformConfig = {}) {
+  constructor(
+    camera: PerspectiveCamera | EPerspectiveCamera,
+    config: CameraTransformConfig = {},
+  ) {
     this.camera = camera;
     this.initialDistance = config.initialDistance ?? 30;
     this.minDistance = config.minDistance ?? 10;
@@ -30,6 +36,8 @@ export class CameraTransformController {
     this.rotationSpeed = config.rotationSpeed ?? 0.002;
     this.zoomSpeed = config.zoomSpeed ?? 0.01;
     this.cameraDistance = this.initialDistance;
+    this.theta = config.initialTheta ?? 0;
+    this.phi = config.initialPhi ?? 0;
 
     this.updateCameraPosition();
   }

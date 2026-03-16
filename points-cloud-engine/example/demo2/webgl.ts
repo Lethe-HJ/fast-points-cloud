@@ -1,22 +1,30 @@
-// ============ 类型定义 ============
+/**
+ * js 场景（标准参考），渲染到 #canvas。
+ * WebGL (core) 以本配置为准，保持相机/光照/材质参数一致以便对比效果。
+ * - 相机：position(30,30,30) lookAt(0,0,0) fov 60° aspect 2 near 0.1 far 1000
+ * - 背景白；环境光 #494949；点光 #fff position(50,50,50) intensity=1.5 distance=0 decay=0
+ * - 立方体：1000个 Phong 材质，随机颜色，分布在 20x20x20 空间内
+ * - 动画：每个立方体独立旋转
+ */
 
 import {
-  Camera,
-  BoxGeometry,
-  Group,
+  PerspectiveCamera,
+  Scene,
   AmbientLight,
   PointLight,
-  Material,
-  MaterialType,
+  BoxGeometry,
+  MeshPhongMaterial,
+  WebGLRenderer,
+  Color,
   Mesh,
-  Renderer,
-  Scene,
+  Group,
 } from "points-cloud-engine";
 import Stats from "stats.js";
+import { CameraTransformController } from "../utils/transform";
 
 // 获取 canvas 元素
-const canvas = document.getElementById("canvas1") as HTMLCanvasElement | null;
-if (!canvas) throw new Error("Canvas element not found");
+const canvas = document.getElementById("canvas") as HTMLCanvasElement | null;
+if (!canvas) throw new Error("Canvas #canvas not found");
 
 // 设置 canvas 尺寸
 const width = 600;
@@ -28,69 +36,98 @@ canvas.height = height * dpr;
 canvas.style.width = `${width}px`;
 canvas.style.height = `${height}px`;
 
+// 调整相机位置以适应更大的场景
+const camera = new PerspectiveCamera(60, width / height, 0.1, 1000);
+camera.up.set(0, 1, 0);
+
+// 创建相机变换控制器
+const cameraController = new CameraTransformController(camera, {
+  initialDistance: 30,
+  minDistance: 10,
+  maxDistance: 100,
+  rotationSpeed: 0.002,
+  zoomSpeed: 0.01,
+});
+
+// 绑定鼠标事件
+cameraController.bindEvents(canvas);
+
 const scene = new Scene();
-scene.setBackground([1, 1, 1]); // 设置背景色为白色，与 threejs 一致
+scene.background = new Color(0xffffffff);
 
 // 环境光 #494949
-const ambient_light = new AmbientLight("#494949");
-scene.add(ambient_light);
+const ambient = new AmbientLight(0x494949);
+scene.add(ambient);
 
-// 点光 #ffffff position(2,6,2) intensity=2 distance=0 decay=0
-const point_light = new PointLight("#ffffff", 2, 0, 0);
-point_light.setPosition(2.0, 6.0, 2.0);
-scene.add(point_light);
+// 点光源位置调整到场景中心上方，照亮整个区域
+const pointLight = new PointLight(0xffffff, 1.5, 0, 0);
+pointLight.position.set(50, 50, 50);
+scene.add(pointLight);
 
-// 与 threejs 一致：fov 45°, aspect 600/300=2, near 0.1, far 20
-const camera = new Camera(45 * (Math.PI / 180), width / height, 0.1, 20);
-camera.setPosition(1, 1, 10);
-camera.lookAt(1, 0, 0);
-camera.setUp(0, 1, 0);
+// 创建立方体几何体
+const boxGeometry = new BoxGeometry(0.2, 0.2, 0.2);
 
-// 创建立方体几何体（与 threejs 一致：中心在原点、边长 2 的立方体）
-const geometry = new BoxGeometry(2, 2, 2);
-
-// 与 Three.js 一致：Phong 绿、高光白、shininess 100
-const material1 = new Material(
-  {
-    type: MaterialType.Phong,
-    color: "#00FF00",
-    specular: "#ffffff",
-    shininess: 100.0,
-  },
-  canvas.getContext("webgl")!,
-);
-
-const mesh1 = new Mesh(geometry, material1); // Mesh的实质就是将几何体和材质绑定成一组 用材质指定的着色器 绘制一次这个几何体
-mesh1.setPosition(-2, 0, 0).setScale(1.5, 1.5, 1.5);
-scene.add(mesh1);
-
-const material2 = new Material(
-  {
-    type: MaterialType.Lambert,
-    color: "#00FF00",
-  },
-  canvas.getContext("webgl")!,
-);
-const mesh2 = new Mesh(geometry, material2);
 const group = new Group();
-group.add(mesh2).setPosition(4, 0, 0).setScale(1.5, 1.5, 1.5);
 scene.add(group);
+// 创建1000个立方体
+const meshes: Mesh[] = [];
+const count = 1000;
+const spread = 20; // 分布范围
 
-const renderer = new Renderer({ canvas, antialias: true });
+for (let i = 0; i < count; i++) {
+  // 随机颜色
+  const color = new Color().setHSL(Math.random(), 0.7, 0.5);
+  const material = new MeshPhongMaterial({
+    color: color,
+    specular: 0xffffff,
+    shininess: 30,
+  });
+
+  const mesh = new Mesh(boxGeometry, material);
+  group.add(mesh);
+
+  // 随机位置，分布在 -10 到 10 的空间内
+  mesh.position.set(
+    (Math.random() - 0.5) * spread,
+    (Math.random() - 0.5) * spread,
+    (Math.random() - 0.5) * spread,
+  );
+
+  // 随机初始旋转
+  mesh.rotation.set(
+    Math.random() * Math.PI * 2,
+    Math.random() * Math.PI * 2,
+    Math.random() * Math.PI * 2,
+  );
+
+  // 随机缩放 (0.5 到 1.5)
+  const scale = 0.5 + Math.random();
+  mesh.scale.setScalar(scale);
+
+  meshes.push(mesh);
+}
+
+const renderer = new WebGLRenderer({ canvas, antialias: true });
 renderer.setSize(width, height);
 renderer.setPixelRatio(dpr);
+renderer.setClearColor(0x000000);
 
 // 性能监控
 const stats = new Stats();
 document.body.appendChild(stats.dom);
 
-let deg = 1;
+// 动画：每个立方体以不同速度旋转
 function animate() {
   stats.begin();
-  deg += 0.005;
-  if (deg > 20) deg = 0;
-  mesh1.setRotation(deg, 2 * deg, 3 * deg);
-  mesh2.setRotation(deg, 2 * deg, 3 * deg);
+
+  meshes.forEach((mesh, index) => {
+    // 每个立方体有不同的旋转速度
+    const speed = 0.5 + (index % 5) * 0.01;
+    mesh.rotation.x += 0.01 * speed;
+    mesh.rotation.y += 0.02 * speed;
+    mesh.rotation.z += 0.005 * speed;
+  });
+
   renderer.render(scene, camera);
   stats.end();
   requestAnimationFrame(animate);

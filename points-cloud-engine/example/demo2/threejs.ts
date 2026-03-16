@@ -1,5 +1,5 @@
 /**
- * js 场景（标准参考），渲染到 #canvas2。
+ * js 场景（标准参考），渲染到 #canvas。
  * WebGL (core) 以本配置为准，保持相机/光照/材质参数一致以便对比效果。
  * - 相机：position(30,30,30) lookAt(0,0,0) fov 60° aspect 2 near 0.1 far 1000
  * - 背景白；环境光 #494949；点光 #fff position(50,50,50) intensity=1.5 distance=0 decay=0
@@ -23,8 +23,8 @@ import Stats from "stats.js";
 import { CameraTransformController } from "../utils/transform";
 
 // 获取 canvas 元素
-const canvas = document.getElementById("canvas2") as HTMLCanvasElement | null;
-if (!canvas) throw new Error("Canvas #canvas2 not found");
+const canvas = document.getElementById("canvas") as HTMLCanvasElement | null;
+if (!canvas) throw new Error("Canvas #canvas not found");
 
 // 设置 canvas 尺寸
 const width = 600;
@@ -71,7 +71,7 @@ const group = new Group();
 scene.add(group);
 // 创建1000个立方体
 const meshes: Mesh[] = [];
-const count = 10000;
+const count = 1000;
 const spread = 20; // 分布范围
 
 for (let i = 0; i < count; i++) {

@@ -3,6 +3,7 @@ import type { AmbientLight } from "../light/ambient";
 import type { PointLight } from "../light/point";
 import type { Group } from "../group/type";
 import { ObjectType } from "../common/object/type";
+import { Color } from "../common/color/color";
 
 export type SceneChild = Mesh | Group | AmbientLight | PointLight;
 
@@ -11,14 +12,14 @@ export class Scene {
   objects: SceneChild[];
   groups: Group[];
   children: SceneChild[];
-  background: [number, number, number] | null;
+  private _background: Color | null;
 
   constructor() {
     this.meshes = [];
     this.objects = [];
     this.groups = [];
     this.children = [];
-    this.background = null;
+    this._background = null;
   }
 
   add(object: SceneChild): void {
@@ -29,21 +30,33 @@ export class Scene {
     } else if (object.name === ObjectType.Group) {
       this.groups.push(object as Group); // 仅添加顶级 group 到 groups 数组
       // 递归添加组内的所有 mesh 到 meshes 数组
-      (object as Group).children.forEach((child: Mesh | Group) => {
-        if (child.name === ObjectType.Mesh) {
-          this.meshes.push(child as Mesh);
-        } else if (child.name === ObjectType.Group) {
-          // 如果组内还有子组，则递归处理
-          this.add(child);
-        }
-      });
+      this._addGroupMeshes(object as Group);
     } else {
       this.objects.push(object);
     }
   }
 
+  private _addGroupMeshes(group: Group): void {
+    group.children.forEach((child: Mesh | Group) => {
+      if (child.name === ObjectType.Mesh) {
+        this.meshes.push(child as Mesh);
+      } else if (child.name === ObjectType.Group) {
+        // 如果组内还有子组，则递归处理
+        this._addGroupMeshes(child as Group);
+      }
+    });
+  }
+
   setBackground(color: [number, number, number]): this {
-    this.background = color;
+    this._background = new Color(color);
     return this;
+  }
+
+  get background(): Color | null {
+    return this._background;
+  }
+
+  set background(color: Color | null) {
+    this._background = color;
   }
 }

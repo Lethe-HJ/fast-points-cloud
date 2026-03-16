@@ -19,7 +19,7 @@ export class Group extends BaseObject {
   parent: Group | null;
 
   constructor() {
-    super("Group");
+    super(ObjectType.Group);
     this.name = ObjectType.Group;
     this.matrixes = {
       model: m4.identity(),
@@ -39,6 +39,16 @@ export class Group extends BaseObject {
   }
 
   updateModelMatrix(): void {
+    // 从 Vector3 更新矩阵
+    this.matrixes.translate = m4.translation(this.position.x, this.position.y, this.position.z);
+    this.matrixes.rotation = m4.multiplySeries(
+      m4.identity(),
+      m4.xRotation(this.rotation.x),
+      m4.yRotation(this.rotation.y),
+      m4.zRotation(this.rotation.z),
+    );
+    this.matrixes.scale = m4.scaling(this.scale.x, this.scale.y, this.scale.z);
+
     const parentModel = this.parent ? this.parent.matrixes.model : null;
     this.matrixes.localModel = m4.multiplySeries(
       this.matrixes.translate,
@@ -52,22 +62,17 @@ export class Group extends BaseObject {
   }
 
   setRotation(xDeg: number, yDeg: number, zDeg: number): this {
-    this.matrixes.rotation = m4.multiplySeries(
-      m4.identity(),
-      m4.xRotation(xDeg),
-      m4.yRotation(yDeg),
-      m4.zRotation(zDeg),
-    );
+    this.rotation.set(xDeg, yDeg, zDeg);
     return this;
   }
 
   setPosition(x: number, y: number, z: number): this {
-    this.matrixes.translate = m4.multiplySeries(m4.identity(), m4.translation(x, y, z));
+    this.position.set(x, y, z);
     return this;
   }
 
   setScale(x: number, y: number, z: number): this {
-    this.matrixes.scale = m4.multiplySeries(m4.identity(), m4.scaling(x, y, z));
+    this.scale.set(x, y, z);
     return this;
   }
 }

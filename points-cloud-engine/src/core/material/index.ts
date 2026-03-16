@@ -1,2 +1,4 @@
-export { Material } from "./type";
-export { MaterialType, type MaterialConfig } from "./types";
+export { Material } from "./base";
+export { MaterialType } from "./type";
+export { MeshPhongMaterial } from "./phong";
+export { MeshLambertMaterial } from "./lambert";

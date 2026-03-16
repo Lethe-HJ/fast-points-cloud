@@ -1,47 +1,92 @@
-import { color3 } from "../common/color/color3";
-import type { Vec3 } from "../common/math/vector/vec3";
+import { Color } from "../common/color/color";
+import { Vector3 } from "../common/math/vector/vector3";
 
 export class PointLight {
   name: "PointLight";
-  position: Vec3;
-  color: [number, number, number];
-  intensity: number;
-  distance: number;
-  decay: number;
+  private _position: Vector3;
+  private _color: Color;
+  private _intensity: number;
+  private _distance: number;
+  private _decay: number;
   private _attenuation: [number, number, number];
 
-  constructor(color: string, intensity: number = 1, distance: number = 0, decay: number = 0) {
+  constructor(
+    color: string | number,
+    intensity: number = 1,
+    distance: number = 0,
+    decay: number = 0,
+  ) {
     this.name = "PointLight";
-    this.position = [0, 0, 0];
-    this.color = color3.hexToRgbNormalized(color);
-    this.intensity = intensity;
-    this.distance = distance;
-    this.decay = decay;
+    this._position = new Vector3();
+    this._color = new Color(color);
+    this._intensity = intensity;
+    this._distance = distance;
+    this._decay = decay;
     this._attenuation = [1, 0, 0]; // 默认为无衰减
   }
 
+  get position(): Vector3 {
+    return this._position;
+  }
+
+  set position(value: Vector3) {
+    this._position = value;
+  }
+
+  get color(): Color {
+    return this._color;
+  }
+
+  set color(value: Color) {
+    this._color = value;
+  }
+
+  get intensity(): number {
+    return this._intensity;
+  }
+
+  set intensity(value: number) {
+    this._intensity = value;
+  }
+
+  get distance(): number {
+    return this._distance;
+  }
+
+  set distance(value: number) {
+    this._distance = value;
+  }
+
+  get decay(): number {
+    return this._decay;
+  }
+
+  set decay(value: number) {
+    this._decay = value;
+  }
+
   setPosition(x: number, y: number, z: number): this {
-    this.position = [x, y, z];
+    this._position.set(x, y, z);
     return this;
   }
 
-  setColor(color: string): this {
-    this.color = color3.hexToRgbNormalized(color);
+  setColor(color: string | number): this {
+    this._color = new Color(color);
     return this;
   }
 
   setIntensity(intensity: number): this {
-    this.intensity = intensity;
+    this._intensity = intensity;
     return this;
   }
 
   setDistance(distance: number): this {
-    this.distance = distance;
+    this._distance = distance;
     return this;
   }
 
   setDecay(decay: number): this {
-    this.decay = decay;
+    this._decay = decay;
     return this;
   }
 
@@ -52,11 +97,11 @@ export class PointLight {
     const locL = gl.getUniformLocation(program, "u_pointLight.linear");
     const locQ = gl.getUniformLocation(program, "u_pointLight.quadratic");
     const locIntensity = gl.getUniformLocation(program, "u_pointLightIntensity");
-    if (locPos) gl.uniform3fv(locPos, this.position);
-    if (locColor) gl.uniform3fv(locColor, this.color);
+    if (locPos) gl.uniform3fv(locPos, this._position.toArray());
+    if (locColor) gl.uniform3fv(locColor, this._color.toArray());
     if (locC) gl.uniform1f(locC, this._attenuation[0]);
     if (locL) gl.uniform1f(locL, this._attenuation[1]);
     if (locQ) gl.uniform1f(locQ, this._attenuation[2]);
-    if (locIntensity) gl.uniform1f(locIntensity, this.intensity);
+    if (locIntensity) gl.uniform1f(locIntensity, this._intensity);
   }
 }

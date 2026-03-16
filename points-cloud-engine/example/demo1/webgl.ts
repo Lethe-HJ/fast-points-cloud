@@ -1,22 +1,29 @@
-// ============ 类型定义 ============
+/**
+ * js 场景（标准参考），渲染到 #canvas。
+ * WebGL (core) 以本配置为准，保持相机/光照/材质参数一致以便对比效果。
+ * - 相机：position(1,1,10) lookAt(1,0,0) fov 45° aspect 2 near 0.1 far 20
+ * - 背景白；环境光 #494949；点光 #fff position(2,6,2) intensity=2 distance=0 decay=0
+ * - 立方体：mesh1 Phong 绿 shininess 100 (-2,0,0) scale 1.5，mesh2 Lambert 绿 (4,0,0) scale 1.5
+ * - 动画：rotation(deg, 2*deg, 3*deg) 弧度
+ */
 
 import {
-  Camera,
-  BoxGeometry,
-  Group,
+  PerspectiveCamera,
+  Scene,
   AmbientLight,
   PointLight,
-  Material,
-  MaterialType,
+  BoxGeometry,
+  MeshPhongMaterial,
+  MeshLambertMaterial,
+  WebGLRenderer,
+  Color,
   Mesh,
-  Renderer,
-  Scene,
 } from "points-cloud-engine";
 import Stats from "stats.js";
 
 // 获取 canvas 元素
-const canvas = document.getElementById("canvas1") as HTMLCanvasElement | null;
-if (!canvas) throw new Error("Canvas element not found");
+const canvas = document.getElementById("canvas") as HTMLCanvasElement | null;
+if (!canvas) throw new Error("Canvas #canvas not found");
 
 // 设置 canvas 尺寸
 const width = 600;
@@ -28,69 +35,64 @@ canvas.height = height * dpr;
 canvas.style.width = `${width}px`;
 canvas.style.height = `${height}px`;
 
+// 与 core 一致：fov 90*(π/360)=45°, aspect 600/300=2, near 0.1, far 20
+const camera = new PerspectiveCamera(45, width / height, 0.1, 20);
+camera.position.set(1, 1, 10);
+camera.lookAt(1, 0, 0);
+camera.up.set(0, 1, 0);
+
 const scene = new Scene();
-scene.setBackground([1, 1, 1]); // 设置背景色为白色，与 threejs 一致
+scene.background = new Color(0xffffffff);
 
 // 环境光 #494949
-const ambient_light = new AmbientLight("#494949");
-scene.add(ambient_light);
+const ambient = new AmbientLight(0x494949);
+scene.add(ambient);
 
-// 点光 #ffffff position(2,6,2) intensity=2 distance=0 decay=0
-const point_light = new PointLight("#ffffff", 2, 0, 0);
-point_light.setPosition(2.0, 6.0, 2.0);
-scene.add(point_light);
+// 点光 #ffffff position(2,6,2)
+// WebGL 衰减: 1/(0.5+0.01*d+0.032*d²)，在 d≈6 时约 0.58；Three 默认 1/distance^decay 在 d=6 时约 0.05，故需提高 intensity
+// decay=0 关闭距离衰减，intensity=2 近似 WebGL 在光源处的 1/constant=2 的强度，使整体亮度与 Phong/Lambert 区分度接近 core
+const pointLight = new PointLight(0xffffff, 2, 0, 0);
+pointLight.position.set(2, 6, 2);
+scene.add(pointLight);
 
-// 与 threejs 一致：fov 45°, aspect 600/300=2, near 0.1, far 20
-const camera = new Camera(45 * (Math.PI / 180), width / height, 0.1, 20);
-camera.setPosition(1, 1, 10);
-camera.lookAt(1, 0, 0);
-camera.setUp(0, 1, 0);
+// 立方体几何（与 core 一致：中心在原点、边长 2 的立方体，scale 1.5 后视觉一致）
+const boxGeometry = new BoxGeometry(2, 2, 2);
 
-// 创建立方体几何体（与 threejs 一致：中心在原点、边长 2 的立方体）
-const geometry = new BoxGeometry(2, 2, 2);
-
-// 与 Three.js 一致：Phong 绿、高光白、shininess 100
-const material1 = new Material(
-  {
-    type: MaterialType.Phong,
-    color: "#00FF00",
-    specular: "#ffffff",
-    shininess: 100.0,
-  },
-  canvas.getContext("webgl")!,
-);
-
-const mesh1 = new Mesh(geometry, material1); // Mesh的实质就是将几何体和材质绑定成一组 用材质指定的着色器 绘制一次这个几何体
-mesh1.setPosition(-2, 0, 0).setScale(1.5, 1.5, 1.5);
+// mesh1: Phong 绿 #00FF00，高光明显：specular 白、shininess 100
+const phongMaterial = new MeshPhongMaterial({
+  color: 0x00ff00,
+  specular: 0xffffff,
+  shininess: 100,
+});
+const mesh1 = new Mesh(boxGeometry, phongMaterial);
+mesh1.position.set(-2, 0, 0);
+mesh1.scale.setScalar(1.5);
 scene.add(mesh1);
 
-const material2 = new Material(
-  {
-    type: MaterialType.Lambert,
-    color: "#00FF00",
-  },
-  canvas.getContext("webgl")!,
-);
-const mesh2 = new Mesh(geometry, material2);
-const group = new Group();
-group.add(mesh2).setPosition(4, 0, 0).setScale(1.5, 1.5, 1.5);
-scene.add(group);
+// mesh2: Lambert 绿（MeshLambertMaterial），在 group 中 position(4,0,0) scale 1.5
+const lambertMaterial = new MeshLambertMaterial({ color: 0x00ff00 });
+const mesh2 = new Mesh(boxGeometry, lambertMaterial);
+mesh2.position.set(4, 0, 0);
+mesh2.scale.setScalar(1.5);
+scene.add(mesh2);
 
-const renderer = new Renderer({ canvas, antialias: true });
+const renderer = new WebGLRenderer({ canvas, antialias: true });
 renderer.setSize(width, height);
 renderer.setPixelRatio(dpr);
+renderer.setClearColor(0x000000);
 
 // 性能监控
 const stats = new Stats();
 document.body.appendChild(stats.dom);
 
+// 与 core 一致：旋转量为弧度，deg 变量从 1 累加到 20 后归零
 let deg = 1;
 function animate() {
   stats.begin();
   deg += 0.005;
   if (deg > 20) deg = 0;
-  mesh1.setRotation(deg, 2 * deg, 3 * deg);
-  mesh2.setRotation(deg, 2 * deg, 3 * deg);
+  mesh1.rotation.set(deg, 2 * deg, 3 * deg);
+  mesh2.rotation.set(deg, 2 * deg, 3 * deg);
   renderer.render(scene, camera);
   stats.end();
   requestAnimationFrame(animate);

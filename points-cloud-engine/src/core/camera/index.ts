@@ -1,4 +1,5 @@
 import { Camera } from "./type";
+import { PerspectiveCamera } from "./perspective";
 import type { Vec3 } from "../common/math/vector/vec3";
 
 export function createCamera(config: {
@@ -17,4 +18,4 @@ export function createCamera(config: {
   return camera;
 }
 
-export { Camera } from "./type";
+export { Camera, PerspectiveCamera };

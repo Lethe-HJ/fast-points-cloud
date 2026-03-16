@@ -1,30 +1,47 @@
-import { color3 } from "../common/color/color3";
+import { Color } from "../common/color/color";
 
 export class AmbientLight {
   name: "AmbientLight";
-  color: [number, number, number];
-  intensity: number;
+  private _color: Color;
+  private _intensity: number;
 
-  constructor(color: string, intensity: number = 1) {
+  constructor(color: string | number, intensity: number = 1) {
     this.name = "AmbientLight";
-    this.color = color3.hexToRgbNormalized(color);
-    this.intensity = intensity;
+    this._color = new Color(color);
+    this._intensity = intensity;
   }
 
-  setColor(color: string): this {
-    this.color = color3.hexToRgbNormalized(color);
+  get color(): Color {
+    return this._color;
+  }
+
+  set color(value: Color) {
+    this._color = value;
+  }
+
+  get intensity(): number {
+    return this._intensity;
+  }
+
+  set intensity(value: number) {
+    this._intensity = value;
+  }
+
+  setColor(color: string | number): this {
+    this._color = new Color(color);
     return this;
   }
 
   setIntensity(intensity: number): this {
-    this.intensity = intensity;
+    this._intensity = intensity;
     return this;
   }
 
   attach(gl: WebGLRenderingContext, program: WebGLProgram): void {
     const loc = gl.getUniformLocation(program, "u_ambientLightColor");
     if (loc) {
-      const scaledColor = this.color.map((c) => c * this.intensity) as [number, number, number];
+      const colorArray = this._color.toArray();
+      const scaledColor = colorArray.map((c) => c * this._intensity) as [number, number, number];
       gl.uniform3fv(loc, scaledColor);
     }
   }
