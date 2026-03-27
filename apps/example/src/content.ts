@@ -133,11 +133,11 @@ export class DemoContent extends LitElement {
       `;
     }
     const engineHtml = this.generateIframeHtml(
-      `./src/${this.demoId}/${this.demoInfo.webglFile}`,
+      `./src/${this.demoId}/${this.demoInfo.leftFile}`,
       "canvas",
     );
     const threejsHtml = this.generateIframeHtml(
-      `./src/${this.demoId}/${this.demoInfo.threejsFile}`,
+      `./src/${this.demoId}/${this.demoInfo.rightFile}`,
       "canvas",
     );
     return html`<div class="demo-container"><div class="demo-card"><div class="demo-title">WebGL Implementation</div><div class="iframe-container"><iframe .srcdoc="${engineHtml}" title="WebGL Implementation"></iframe></div></div><div class="demo-card"><div class="demo-title">Three.js Standard</div><div class="iframe-container"><iframe .srcdoc="${threejsHtml}" title="Three.js Standard"></iframe></div></div></div>`;

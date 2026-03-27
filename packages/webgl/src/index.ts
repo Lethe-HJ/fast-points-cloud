@@ -11,6 +11,7 @@ import { WebGLRenderer } from "./renderer";
 import { Scene } from "./scene";
 import { Color } from "./common/color/color";
 import { Vector3 } from "./common/math/vector/vector3";
+import { Frustum } from "./utils/culling";
 
 export {
   createCamera,
@@ -27,6 +28,7 @@ export {
   MeshLambertMaterial,
   Mesh,
   WebGLRenderer,
+  Frustum,
   Scene,
   Color,
   Vector3,

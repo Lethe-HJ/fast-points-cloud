@@ -10,8 +10,8 @@ export interface DemoInfo {
   name: string;
   description: string;
   showInMenu: boolean;
-  webglFile: string;
-  threejsFile: string;
+  leftFile: string;
+  rightFile: string;
   init: () => Promise<void>;
 }
 
@@ -90,7 +90,7 @@ export class DemoLayout extends LitElement {
         )}
       </div>
       <div class="content">
-        <h1>Points Cloud Engine - ${activeItem?.name}</h1>
+        <h1>mini-three - ${activeItem?.name}</h1>
         ${activeItem ? html`<p>${activeItem.description}</p>` : html``}
         <demo-content .demoId=${this.activeId} .demoInfo=${activeItem}></demo-content>
       </div>

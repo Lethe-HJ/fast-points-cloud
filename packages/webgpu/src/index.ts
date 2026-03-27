@@ -1,5 +1,5 @@
 const WEBGPU_NOT_IMPLEMENTED_MESSAGE =
-  "points-cloud-engine/webgpu is not implemented yet. Please use points-cloud-engine/webgl for now.";
+  "mini-three/webgpu is not implemented yet. Please use mini-three/webgl for now.";
 
 /**
  * Temporary placeholder for WebGPU support.

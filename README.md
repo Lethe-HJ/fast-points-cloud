@@ -1,4 +1,4 @@
-# Points Cloud Engine
+# mini-three
 
 一个从零实现的轻量级 WebGL 3D 渲染引擎，参考 Three.js API 设计，用于学习和理解现代图形渲染管线的核心原理。
 
@@ -10,7 +10,7 @@
 
 ## 项目简介
 
-Points Cloud Engine 是一个纯手写的 WebGL 渲染引擎，不依赖任何图形库（除了使用 Three.js 作为参考对比）。项目实现了完整的 3D 渲染管线，包括：
+mini-three 是一个纯手写的 WebGL 渲染引擎，不依赖任何图形库（除了使用 Three.js 作为参考对比）。项目实现了完整的 3D 渲染管线，包括：
 
 - **相机系统**：透视相机（PerspectiveCamera），支持 lookAt、矩阵变换等
 - **光照系统**：环境光（AmbientLight）、点光源（PointLight），支持 Phong 和 Lambert 光照模型
@@ -34,7 +34,7 @@ packages/
 ├── webgpu/             # WebGPU 子项目入口（占位）
 └── types/              # 跨渲染后端共享类型
 
-points-cloud-engine/    # 现阶段保留的历史实现目录（供迁移期复用）
+mini-three/    # 现阶段保留的历史实现目录（供迁移期复用）
 └── src/core/
 ```
 

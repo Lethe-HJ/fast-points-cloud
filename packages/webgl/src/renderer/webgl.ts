@@ -4,15 +4,19 @@ import type { Scene } from "../scene/type";
 import type { RendererConfig } from "./type";
 import type { Mesh } from "../mesh/type";
 import type { Group } from "../group/type";
+import { Frustum } from "../utils/culling/frustum";
 
 export class WebGLRenderer {
   private gl: WebGLRenderingContext;
   private pixelRatio: number = 1;
+  frustumCulling: boolean;
+  private frustum: Frustum = new Frustum();
 
   constructor(config: RendererConfig | WebGLRenderingContext) {
     let gl: WebGLRenderingContext | null = null;
     if (config instanceof WebGLRenderingContext) {
       gl = config;
+      this.frustumCulling = true;
     } else {
       const canvas = config.canvas;
       if (!canvas) {
@@ -22,6 +26,7 @@ export class WebGLRenderer {
       if (!gl) {
         throw new Error("WebGL not supported");
       }
+      this.frustumCulling = config.frustumCulling ?? true;
     }
     this.gl = gl;
     this.gl.enable(gl.DEPTH_TEST);
@@ -83,7 +88,14 @@ export class WebGLRenderer {
       collectMeshes(object as Mesh | Group);
     });
 
+    if (this.frustumCulling) {
+      this.frustum.setFromProjectionMatrix(camera.matrix.vp);
+    }
+
     meshes.forEach((mesh) => {
+      if (this.frustumCulling && !this.frustum.intersectsSphere(mesh.getWorldBoundingSphere())) {
+        return;
+      }
       mesh.attach(gl);
       const shaderProgram = mesh.material.getShaderProgram();
       if (!shaderProgram) throw new Error("ShaderProgram is not attached");

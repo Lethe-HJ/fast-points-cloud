@@ -5,6 +5,7 @@ import type { Material } from "../material/base";
 import type { Group } from "../group/type";
 import type { Camera } from "../camera/type";
 import { ObjectType } from "../common/object/type";
+import type { BoundingSphere } from "../utils/culling/frustum";
 
 export interface MeshMatrixSet {
   mvp: { value: Mat4 | null; location: WebGLUniformLocation | null };
@@ -86,6 +87,27 @@ export class Mesh extends BaseObject {
       gl.uniformMatrix4fv(this.matrixes.mvp.location, false, toF32(mvpMatrix));
     if (this.matrixes.normal.location)
       gl.uniformMatrix4fv(this.matrixes.normal.location, false, toF32(normalMatrix));
+  }
+
+  getWorldBoundingSphere(): BoundingSphere {
+    const localSphere = this.geometry.getBoundingSphere();
+    const model = this.matrixes.model.value ?? m4.identity();
+    const [x, y, z] = localSphere.center;
+    const worldCenter: [number, number, number] = [
+      x * model[0] + y * model[4] + z * model[8] + model[12],
+      x * model[1] + y * model[5] + z * model[9] + model[13],
+      x * model[2] + y * model[6] + z * model[10] + model[14],
+    ];
+
+    const sx = Math.hypot(model[0], model[1], model[2]);
+    const sy = Math.hypot(model[4], model[5], model[6]);
+    const sz = Math.hypot(model[8], model[9], model[10]);
+    const scale = Math.max(sx, sy, sz);
+
+    return {
+      center: worldCenter,
+      radius: localSphere.radius * scale,
+    };
   }
 
   setRotation(xDeg: number, yDeg: number, zDeg: number): this {
