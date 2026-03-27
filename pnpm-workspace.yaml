@@ -1,2 +1,4 @@
 packages:
   - "points-cloud-engine"
+  - "packages/*"
+  - "apps/*"

@@ -42,9 +42,6 @@ importers:
       lit:
         specifier: ^3.3.2
         version: 3.3.2
-      points-cloud-engine:
-        specifier: workspace:*
-        version: 'link:'
       stats.js:
         specifier: ^0.17.0
         version: 0.17.0

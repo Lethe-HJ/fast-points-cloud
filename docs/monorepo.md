@@ -7,7 +7,8 @@
 ```
 fast-points-cloud/          # 仓库根目录
 ├── package.json            # 根 package：仅负责 Git 钩子等仓库级工具，含 no-op 的 check
-├── pnpm-workspace.yaml     # pnpm 工作空间配置
+├── pnpm-workspace.yaml     # pnpm 工作空间配置（points-cloud-engine + apps/* + packages/*）
+├── .npmrc                  # workspace 安装策略（单一 lockfile 等）
 ├── .husky/                 # Git 钩子，仅此一份，在根目录
 │   ├── pre-commit          # 只执行 pnpm -r run check，不依赖任何子项目具体命令
 │   ├── commit-msg          # 使用 commitlint 检查提交信息格式，见 docs/commit-message.md
@@ -33,11 +34,15 @@ fast-points-cloud/          # 仓库根目录
   - `check`：无操作（`true`），仅用于满足 `pnpm -r run check` 在根包上的调用。
   - 仅安装与仓库级工具相关的依赖（如 `husky`）。
 - **`.husky/`**：所有 Git 钩子统一放在根目录；**不依赖任何子项目名称或具体命令**，只调用统一的 `check`。
+- **`.npmrc`**：
+  - `shared-workspace-lockfile=true`：强制整个仓库只使用根目录 `pnpm-lock.yaml`。
+  - `link-workspace-packages=true` / `prefer-workspace-packages=true`：优先链接 workspace 本地包，减少解析歧义。
 
 ### 2. 子项目（包）
 
 - **职责**：各自实现功能，并**提供统一的 `check` 脚本**，内部通过 shell 脚本执行本包所需的检查（typecheck、lint、format:check 等）。
 - **不安装 Husky**：不在子项目的 `package.json` 里加 `husky` 或 `prepare` 钩子逻辑，避免重复和冲突。
+- **不提交子包 lockfile**：子目录不应存在 `pnpm-lock.yaml`，统一依赖根 lockfile。
 - **统一入口**：子项目必须提供 `check` 脚本，且**由本包内的 shell 脚本实现具体检查逻辑**（如 `scripts/check.sh`），这样根目录的 Husky 只依赖「每个包都有 `check`」，不关心各包内部跑的是 typecheck、lint 还是别的。
 - **脚本约定**（在 `scripts/check.sh` 或等价脚本内调用即可）：
   - `typecheck`：类型检查（如 `tsc --noEmit`）
@@ -67,6 +72,7 @@ pnpm -r run check
 | 场景           | 建议命令 |
 |----------------|----------|
 | 根目录安装依赖 | 在根目录执行 `pnpm install`（会执行 `prepare`，配置 Husky） |
+| 全仓检查       | 在根目录执行 `pnpm -r run check` |
 | 子项目开发     | `cd points-cloud-engine && pnpm run dev` |
 | 子项目构建     | `cd points-cloud-engine && pnpm run build` |
 | 修复格式       | `cd points-cloud-engine && pnpm run format:fix` |
@@ -79,3 +85,31 @@ pnpm -r run check
 3. 子项目内实现**统一的 `check` 脚本**，指向本包内的 shell 脚本（如 `"check": "sh scripts/check.sh"`）。
 4. 在子项目内编写 `scripts/check.sh`（或等价），在其中按需执行本包的 `typecheck`、`lint`、`format:check` 等（通过 `pnpm run ...` 调用）。
 5. **无需修改根目录 `.husky/pre-commit`**：根目录只执行 `pnpm -r run check`，新包只要提供 `check` 就会自动被纳入提交前检查。
+
+## 工作区匹配规则
+
+- 当前 `pnpm-workspace.yaml` 约定：
+  - `points-cloud-engine`（现有核心包）
+  - `apps/*`（未来应用包）
+  - `packages/*`（未来通用库包）
+- 原则：先保持现有目录稳定，后续新增包直接按 `apps/*` 或 `packages/*` 接入。
+
+## 新包模板（最小脚手架）
+
+新增 `apps/<name>` 或 `packages/<name>` 时，建议最小 `package.json`：
+
+```json
+{
+  "name": "@scope/example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "sh scripts/check.sh",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo \"todo: lint\"",
+    "format:check": "echo \"todo: format:check\""
+  }
+}
+```
+
+并在 `scripts/check.sh` 中串联本包需要的检查命令。

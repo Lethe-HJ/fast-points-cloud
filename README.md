@@ -2,6 +2,12 @@
 
 一个从零实现的轻量级 WebGL 3D 渲染引擎，参考 Three.js API 设计，用于学习和理解现代图形渲染管线的核心原理。
 
+## Monorepo 说明
+
+- 本仓库使用 `pnpm workspace` 管理多包，当前核心包为 `points-cloud-engine`。
+- 工作区入口配置见 `pnpm-workspace.yaml`，管理约束见 `docs/monorepo.md`。
+- 统一提交前检查由根目录 Husky 执行：`pnpm -r run check`。
+
 ## 项目简介
 
 Points Cloud Engine 是一个纯手写的 WebGL 渲染引擎，不依赖任何图形库（除了使用 Three.js 作为参考对比）。项目实现了完整的 3D 渲染管线，包括：
@@ -60,6 +66,10 @@ pnpm config set registry https://registry.npmmirror.com/
 ### 安装依赖
 
 ```bash
+# 在仓库根目录安装（推荐）
+pnpm install
+
+# 如需单独进入核心包目录
 cd points-cloud-engine
 pnpm install
 ```
@@ -69,42 +79,48 @@ pnpm install
 ### 开发命令
 
 ```bash
+# 在仓库根目录执行全仓检查
+pnpm -r run check
+
+# 进入核心包目录执行开发命令
+cd points-cloud-engine
+
 # 启动示例服务器（推荐）
-npm run example
+pnpm run example
 
 # 开发模式（监听构建）
-npm run dev
+pnpm run dev
 
 # 构建项目
-npm run build
+pnpm run build
 
 # 预览构建结果
-npm run preview
+pnpm run preview
 ```
 
 ### 代码质量
 
 ```bash
 # 类型检查
-npm run typecheck
+pnpm run typecheck
 
 # 代码检查
-npm run lint
+pnpm run lint
 
 # 自动修复代码问题
-npm run lint:fix
+pnpm run lint:fix
 
 # 代码格式化
-npm run format
+pnpm run format
 
 # 检查代码格式
-npm run format:check
+pnpm run format:check
 
 # 一键修复（格式化 + 自动修复）
-npm run fix
+pnpm run fix
 
 # 完整检查（类型检查 + 代码检查 + 格式检查）
-npm run check
+pnpm run check
 ```
 
 ## 示例展示
