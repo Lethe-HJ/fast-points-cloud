@@ -2,12 +2,30 @@
   "private": true,
   "scripts": {
     "prepare": "husky",
-    "check": "true"
+    "check": "sh scripts/check.sh",
+    "typecheck": "sh scripts/typecheck.sh",
+    "lint": "sh scripts/lint.sh",
+    "format:check": "sh scripts/format-check.sh",
+    "lint:fix": "sh scripts/lint-fix.sh",
+    "format:fix": "sh scripts/format-fix.sh",
+    "fix": "sh scripts/fix.sh",
+    "example": "pnpm --filter @mini-three/example dev"
+  },
+  "dependencies": {
+    "lit": "^3.3.2",
+    "stats.js": "^0.17.0",
+    "three": "^0.170.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.6.0",
     "@commitlint/config-conventional": "^19.6.0",
-    "husky": "^9.1.7"
+    "@types/stats.js": "^0.17.4",
+    "@types/three": "^0.170.0",
+    "husky": "^9.1.7",
+    "oxfmt": "^0.38.0",
+    "oxlint": "^1.53.0",
+    "typescript": "~5.9.3",
+    "vite": "^8.0.0-beta.13"
   },
   "pnpm": {
     "overrides": {

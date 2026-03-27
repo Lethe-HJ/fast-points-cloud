@@ -1,0 +1,11 @@
+{
+  "folders": [
+    {
+      "path": ".",
+    },
+  ],
+  "settings": {},
+  "extensions": {
+    "recommendations": ["runem.lit-plugin", "boyswan.glsl-literal"],
+  },
+}

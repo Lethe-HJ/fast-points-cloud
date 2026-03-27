@@ -1,0 +1,11 @@
+export const demoInfo = {
+  id: "demo2",
+  name: "1千立方体",
+  description: "第二个演示：1000个正方体的旋转场景渲染",
+  showInMenu: true,
+  webglFile: "webgl.ts",
+  threejsFile: "threejs.ts",
+  init: async () => {
+    await Promise.all([import("./webgl"), import("./threejs")]);
+  },
+};
