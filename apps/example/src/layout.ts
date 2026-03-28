@@ -24,6 +24,7 @@ export class DemoLayout extends LitElement {
     :host {
       display: flex;
       height: 100vh;
+      min-height: 0;
       font-family: Arial, sans-serif;
     }
     .sidebar {
@@ -35,8 +36,17 @@ export class DemoLayout extends LitElement {
     }
     .content {
       flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      min-width: 0;
       padding: 20px;
-      overflow-y: auto;
+      overflow: hidden;
+    }
+    .content > demo-content {
+      flex: 1 1 0;
+      min-height: 0;
+      min-width: 0;
     }
     .nav-item {
       padding: 10px;
@@ -86,13 +96,21 @@ export class DemoLayout extends LitElement {
         <h2>Demos</h2>
         ${this.demoItems.map(
           (item) =>
-            html`<div class="nav-item ${this.activeId === item.id ? "active" : ""}" @click=${() => this.handleNavClick(item)}>${item.name}</div>`,
+            html`<div
+              class="nav-item ${this.activeId === item.id ? "active" : ""}"
+              @click=${() => this.handleNavClick(item)}
+            >
+              ${item.name}
+            </div>`,
         )}
       </div>
       <div class="content">
         <h1>mini-three - ${activeItem?.name}</h1>
         ${activeItem ? html`<p>${activeItem.description}</p>` : html``}
-        <demo-content .demoId=${this.activeId} .demoInfo=${activeItem}></demo-content>
+        <demo-content
+          .demoId=${this.activeId}
+          .demoInfo=${activeItem}
+        ></demo-content>
       </div>
     `;
   }

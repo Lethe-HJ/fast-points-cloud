@@ -11,19 +11,12 @@ import {
   Mesh,
 } from "@mini-three/webgl";
 import Stats from "stats.js";
+import { syncMiniThreeCanvasSize } from "../utils/sync-canvas-size";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement | null;
 if (!canvas) throw new Error("Canvas #canvas not found");
 
-const width = 600;
-const height = 300;
-const dpr = window.devicePixelRatio || 1;
-canvas.width = width * dpr;
-canvas.height = height * dpr;
-canvas.style.width = `${width}px`;
-canvas.style.height = `${height}px`;
-
-const camera = new PerspectiveCamera(45, width / height, 0.1, 20);
+const camera = new PerspectiveCamera(45, 1, 0.1, 20);
 camera.position.set(1, 1, 10);
 camera.lookAt(1, 0, 0);
 camera.up.set(0, 1, 0);
@@ -54,9 +47,11 @@ mesh2.scale.setScalar(1.5);
 scene.add(mesh2);
 
 const renderer = new WebGLRenderer({ canvas, antialias: true });
-renderer.setSize(width, height);
-renderer.setPixelRatio(dpr);
 renderer.setClearColor(0x000000);
+
+const ro = new ResizeObserver(() => syncMiniThreeCanvasSize(canvas, renderer, camera));
+ro.observe(canvas);
+syncMiniThreeCanvasSize(canvas, renderer, camera);
 
 const stats = new Stats();
 document.body.appendChild(stats.dom);

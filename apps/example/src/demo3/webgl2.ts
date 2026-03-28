@@ -12,19 +12,12 @@ import {
 } from "@mini-three/webgl";
 import Stats from "stats.js";
 import { CameraTransformController } from "../utils/transform";
+import { syncMiniThreeCanvasSize } from "../utils/sync-canvas-size";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement | null;
 if (!canvas) throw new Error("Canvas #canvas not found");
 
-const width = 600;
-const height = 300;
-const dpr = window.devicePixelRatio || 1;
-canvas.width = width * dpr;
-canvas.height = height * dpr;
-canvas.style.width = `${width}px`;
-canvas.style.height = `${height}px`;
-
-const camera = new PerspectiveCamera(60, width / height, 0.1, 1000);
+const camera = new PerspectiveCamera(60, 1, 0.1, 1000);
 camera.up.set(0, 1, 0);
 const cameraController = new CameraTransformController(camera, {
   initialDistance: 30,
@@ -74,9 +67,11 @@ for (let i = 0; i < count; i++) {
 }
 
 const renderer = new WebGLRenderer({ canvas, antialias: true, frustumCulling: true });
-renderer.setSize(width, height);
-renderer.setPixelRatio(dpr);
 renderer.setClearColor(0x000000);
+
+const ro = new ResizeObserver(() => syncMiniThreeCanvasSize(canvas, renderer, camera));
+ro.observe(canvas);
+syncMiniThreeCanvasSize(canvas, renderer, camera);
 
 const tag = document.createElement("div");
 tag.textContent = "frustumCulling: ON";
