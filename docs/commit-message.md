@@ -2,6 +2,16 @@
 
 本仓库使用 [Conventional Commits](https://www.conventionalcommits.org/) 规范，并通过 [commitlint](https://commitlint.js.org/) 在 `commit-msg` 钩子中自动检查。不符合规范的提交会被拒绝。
 
+## 本仓库配置
+
+校验规则见根目录 [`commitlint.config.js`](../commitlint.config.js)，在 `@commitlint/config-conventional` 基础上约定：
+
+- **允许的 type**：与下文「类型」表格一致（共 9 种），未列出的 type 会被拒绝。
+- **标题行长度**：不超过 **100** 字符。
+- **subject 大小写**：不做强制（`subject-case` 关闭），中英文描述均可。
+
+**scope 建议**（可选，便于区分影响面）：`webgl`、`webgpu`、`types`、`example`、根级配置可用 `root` 或省略 scope。
+
 ## 基本格式
 
 ```

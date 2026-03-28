@@ -10,6 +10,9 @@
       "default": "./src/index.ts"
     }
   },
+  "devDependencies": {
+    "vite": "^8.0.0-beta.13"
+  },
   "scripts": {
     "check": "sh scripts/check.sh",
     "typecheck": "tsc --noEmit",

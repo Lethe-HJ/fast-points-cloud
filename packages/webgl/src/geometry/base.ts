@@ -1,3 +1,4 @@
+import type { ShaderProgram } from "../common/program";
 import type { BoundingSphere } from "../utils/culling/frustum";
 
 export class Geometry {
@@ -20,15 +21,15 @@ export class Geometry {
     return this.boundingSphere;
   }
 
-  attach(gl: WebGLRenderingContext, program: WebGLProgram): void {
-    const a_positionLocation = gl.getAttribLocation(program, "a_position");
+  attach(gl: WebGLRenderingContext, sp: ShaderProgram): void {
+    const a_positionLocation = sp.getAttribLocation("a_position");
     const vertices_buffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vertices_buffer);
     gl.bufferData(gl.ARRAY_BUFFER, this.vertices, gl.STATIC_DRAW);
     gl.vertexAttribPointer(a_positionLocation, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(a_positionLocation);
 
-    const a_normalLocation = gl.getAttribLocation(program, "a_normal");
+    const a_normalLocation = sp.getAttribLocation("a_normal");
     const normal_buffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, normal_buffer);
     gl.bufferData(gl.ARRAY_BUFFER, this.normals, gl.STATIC_DRAW);

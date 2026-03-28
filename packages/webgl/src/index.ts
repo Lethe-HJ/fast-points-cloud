@@ -1,5 +1,5 @@
 // ============ 类型定义 ============
-
+import "./env";
 import { createCamera, Camera, PerspectiveCamera } from "./camera";
 import { Geometry, BoxGeometry } from "./geometry";
 import { Group } from "./group";

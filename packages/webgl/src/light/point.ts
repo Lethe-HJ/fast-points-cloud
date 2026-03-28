@@ -1,3 +1,4 @@
+import type { ShaderProgram } from "../common/program";
 import { Color } from "../common/color/color";
 import { Vector3 } from "../common/math/vector/vector3";
 
@@ -90,13 +91,13 @@ export class PointLight {
     return this;
   }
 
-  attach(gl: WebGLRenderingContext, program: WebGLProgram): void {
-    const locPos = gl.getUniformLocation(program, "u_pointLight.position");
-    const locColor = gl.getUniformLocation(program, "u_pointLight.color");
-    const locC = gl.getUniformLocation(program, "u_pointLight.constant");
-    const locL = gl.getUniformLocation(program, "u_pointLight.linear");
-    const locQ = gl.getUniformLocation(program, "u_pointLight.quadratic");
-    const locIntensity = gl.getUniformLocation(program, "u_pointLightIntensity");
+  attach(gl: WebGLRenderingContext, sp: ShaderProgram): void {
+    const locPos = sp.getUniformLocation("u_pointLight.position");
+    const locColor = sp.getUniformLocation("u_pointLight.color");
+    const locC = sp.getUniformLocation("u_pointLight.constant");
+    const locL = sp.getUniformLocation("u_pointLight.linear");
+    const locQ = sp.getUniformLocation("u_pointLight.quadratic");
+    const locIntensity = sp.getUniformLocation("u_pointLightIntensity");
     if (locPos) gl.uniform3fv(locPos, this._position.toArray());
     if (locColor) gl.uniform3fv(locColor, this._color.toArray());
     if (locC) gl.uniform1f(locC, this._attenuation[0]);

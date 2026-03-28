@@ -1,3 +1,4 @@
+import type { ShaderProgram } from "../common/program";
 import { m4 } from "../common/math/matrix/matrix4";
 import type { Mat4 } from "../common/math/matrix/matrix4";
 import { Vector3 } from "../common/math/vector/vector3";
@@ -99,9 +100,9 @@ export class Camera {
     };
   }
 
-  attach(gl: WebGLRenderingContext, program: WebGLProgram): void {
-    gl.useProgram(program);
-    const loc = gl.getUniformLocation(program, "u_cameraPosition");
+  attach(gl: WebGLRenderingContext, sp: ShaderProgram): void {
+    sp.useProgram();
+    const loc = sp.getUniformLocation("u_cameraPosition");
     if (loc) gl.uniform3fv(loc, this._position.toArray());
   }
 }

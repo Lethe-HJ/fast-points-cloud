@@ -1,3 +1,4 @@
+import type { ShaderProgram } from "../common/program";
 import { Color } from "../common/color/color";
 
 export class AmbientLight {
@@ -37,8 +38,8 @@ export class AmbientLight {
     return this;
   }
 
-  attach(gl: WebGLRenderingContext, program: WebGLProgram): void {
-    const loc = gl.getUniformLocation(program, "u_ambientLightColor");
+  attach(gl: WebGLRenderingContext, sp: ShaderProgram): void {
+    const loc = sp.getUniformLocation("u_ambientLightColor");
     if (loc) {
       const colorArray = this._color.toArray();
       const scaledColor = colorArray.map((c) => c * this._intensity) as [number, number, number];

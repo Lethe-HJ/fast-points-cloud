@@ -11,7 +11,8 @@ mini-three/
 ├── pnpm-lock.yaml              # 全仓唯一 lockfile
 ├── .husky/                     # 全仓统一 Git hooks
 ├── docs/
-│   └── monorepo.md
+│   ├── monorepo.md
+│   └── commit-message.md       # Commit message 与 Conventional Commits 约定
 ├── packages/
 │   ├── webgl/                  # WebGL 子项目
 │   ├── webgpu/                 # WebGPU 子项目（当前为占位实现）
@@ -70,11 +71,11 @@ pnpm -r run check
 
 ## 常用命令
 
-| 场景 | 建议命令 |
-| --- | --- |
-| 安装依赖 | 根目录执行 `pnpm install` |
-| 全仓检查 | 根目录执行 `pnpm -r run check` |
-| 检查 webgl | 根目录执行 `pnpm --filter @mini-three/webgl run check` |
-| 检查 webgpu | 根目录执行 `pnpm --filter @mini-three/webgpu run check` |
-| 检查 types | 根目录执行 `pnpm --filter @mini-three/types run check` |
-| 启动示例 app | 根目录执行 `pnpm --filter @mini-three/example run dev` |
+| 场景         | 建议命令                                                |
+| ------------ | ------------------------------------------------------- |
+| 安装依赖     | 根目录执行 `pnpm install`                               |
+| 全仓检查     | 根目录执行 `pnpm -r run check`                          |
+| 检查 webgl   | 根目录执行 `pnpm --filter @mini-three/webgl run check`  |
+| 检查 webgpu  | 根目录执行 `pnpm --filter @mini-three/webgpu run check` |
+| 检查 types   | 根目录执行 `pnpm --filter @mini-three/types run check`  |
+| 启动示例 app | 根目录执行 `pnpm --filter @mini-three/example run dev`  |

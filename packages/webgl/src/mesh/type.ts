@@ -1,6 +1,7 @@
 import { m4, type Mat4 } from "../common/math/matrix/matrix4";
 import { BaseObject } from "../common/object/base";
 import type { Geometry } from "../geometry/base";
+import type { ShaderProgram } from "../common/program";
 import type { Material } from "../material/base";
 import type { Group } from "../group/type";
 import type { Camera } from "../camera/type";
@@ -41,15 +42,15 @@ export class Mesh extends BaseObject {
     };
   }
 
-  attach(gl: WebGLRenderingContext): void {
-    this.material.attach(gl);
-    const program = this.material.getShaderProgram();
-    if (!program) throw new Error("Mesh: shader program is null");
-    gl.useProgram(program);
-    this.matrixes.mvp.location = gl.getUniformLocation(program, "u_mvpMatrix");
-    this.matrixes.model.location = gl.getUniformLocation(program, "u_modelMatrix");
-    this.matrixes.normal.location = gl.getUniformLocation(program, "u_normalMatrix");
-    this.geometry.attach(gl, program);
+  attach(gl: WebGLRenderingContext, skipUseProgram = false): void {
+    this.material.attach(gl, skipUseProgram);
+    const sp = this.material.getShaderProgram();
+    if (!sp) throw new Error("Mesh: shader program is null");
+    if (!skipUseProgram) sp.useProgram();
+    this.matrixes.mvp.location = sp.getUniformLocation("u_mvpMatrix");
+    this.matrixes.model.location = sp.getUniformLocation("u_modelMatrix");
+    this.matrixes.normal.location = sp.getUniformLocation("u_normalMatrix");
+    this.geometry.attach(gl, sp);
   }
 
   updateModelMatrix(): void {
