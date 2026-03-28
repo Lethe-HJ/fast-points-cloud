@@ -2,7 +2,8 @@ import type { Camera } from "../camera/type";
 import { Color } from "../common/color/color";
 import type { Scene } from "../scene/type";
 import type { RendererConfig } from "./type";
-import type { Mesh } from "../mesh/type";
+import type { Mesh } from "../mesh";
+import { indexArrayToElementType } from "../geometry/base";
 import type { Group } from "../group/type";
 import type { ShaderProgram } from "../common/program";
 import { Frustum } from "../utils/culling/frustum";
@@ -162,7 +163,8 @@ export class WebGLRenderer {
         }
       }
       camera.attach(gl, sp);
-      gl.drawElements(gl.TRIANGLES, mesh.geometry.indices.length, gl.UNSIGNED_BYTE, 0);
+      const idx = mesh.geometry.indices;
+      gl.drawElements(gl.TRIANGLES, idx.length, indexArrayToElementType(gl, idx), 0);
     }
   }
 }

@@ -2,7 +2,7 @@ import { m4 } from "../common/math/matrix/matrix4";
 import type { Mat4 } from "../common/math/matrix/matrix4";
 import { BaseObject } from "../common/object/base";
 import { ObjectType } from "../common/object/type";
-import type { Mesh } from "../mesh/type";
+import type { Mesh } from "../mesh";
 
 export interface GroupMatrixSet {
   model: Mat4;

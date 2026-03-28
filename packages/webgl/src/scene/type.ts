@@ -1,4 +1,4 @@
-import type { Mesh } from "../mesh/type";
+import type { Mesh } from "../mesh";
 import type { AmbientLight } from "../light/ambient";
 import type { PointLight } from "../light/point";
 import type { Group } from "../group/type";
