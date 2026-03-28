@@ -9,6 +9,8 @@ export interface CameraTransformConfig {
   zoomSpeed?: number;
   initialTheta?: number;
   initialPhi?: number;
+  /** 相机位姿因交互更新后调用（用于按需渲染） */
+  onChange?: () => void;
 }
 
 export class CameraTransformController {
@@ -23,6 +25,7 @@ export class CameraTransformController {
   private cameraDistance: number;
   private theta = 0;
   private phi = 0;
+  private onChange?: () => void;
 
   constructor(camera: PerspectiveCamera | EPerspectiveCamera, config: CameraTransformConfig = {}) {
     this.camera = camera;
@@ -34,6 +37,7 @@ export class CameraTransformController {
     this.cameraDistance = this.initialDistance;
     this.theta = config.initialTheta ?? 0;
     this.phi = config.initialPhi ?? 0;
+    this.onChange = config.onChange;
     this.updateCameraPosition();
   }
 
@@ -58,6 +62,7 @@ export class CameraTransformController {
     this.phi = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, this.phi));
     this.previousMousePosition.copy(currentMousePosition);
     this.updateCameraPosition();
+    this.onChange?.();
   };
   private handleMouseUp = () => {
     this.isDragging = false;
@@ -72,6 +77,7 @@ export class CameraTransformController {
       Math.min(this.maxDistance, this.cameraDistance - event.deltaY * this.zoomSpeed),
     );
     this.updateCameraPosition();
+    this.onChange?.();
   };
 
   bindEvents(canvas: HTMLCanvasElement) {

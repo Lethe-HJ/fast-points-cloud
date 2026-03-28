@@ -68,9 +68,7 @@ for (let i = 0; i < count; i++) {
 const renderer = new WebGLRenderer({ canvas, antialias: true });
 renderer.setClearColor(0x000000);
 
-const ro = new ResizeObserver(() =>
-  syncThreeCanvasSize(canvas, renderer, camera),
-);
+const ro = new ResizeObserver(() => syncThreeCanvasSize(canvas, renderer, camera));
 ro.observe(canvas);
 syncThreeCanvasSize(canvas, renderer, camera);
 

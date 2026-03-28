@@ -17,5 +17,8 @@
   },
   "dependencies": {
     "@mini-three/webgl": "workspace:*"
+  },
+  "devDependencies": {
+    "vite": "^8.0.0-beta.13"
   }
 }

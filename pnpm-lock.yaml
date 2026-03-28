@@ -54,8 +54,16 @@ importers:
       '@mini-three/webgl':
         specifier: workspace:*
         version: link:../../packages/webgl
+    devDependencies:
+      vite:
+        specifier: ^8.0.0-beta.13
+        version: 8.0.3(@types/node@25.4.0)(jiti@2.6.1)
 
-  packages/types: {}
+  packages/types:
+    devDependencies:
+      vite:
+        specifier: ^8.0.0-beta.13
+        version: 8.0.3(@types/node@25.4.0)(jiti@2.6.1)
 
   packages/webgl:
     dependencies:

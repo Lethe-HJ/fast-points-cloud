@@ -49,9 +49,7 @@ scene.add(mesh2);
 const renderer = new WebGLRenderer({ canvas, antialias: true });
 renderer.setClearColor(0x000000);
 
-const ro = new ResizeObserver(() =>
-  syncMiniThreeCanvasSize(canvas, renderer, camera),
-);
+const ro = new ResizeObserver(() => syncMiniThreeCanvasSize(canvas, renderer, camera));
 ro.observe(canvas);
 syncMiniThreeCanvasSize(canvas, renderer, camera);
 
