@@ -17,6 +17,9 @@ export function indexArrayToElementType(gl: WebGL2RenderingContext, indices: Ind
 }
 
 export class Geometry {
+  private static sortIdSeq = 1;
+  /** 同 `ShaderProgram` 下按 geometry/VAO 批处理排序用，实例稳定递增 id */
+  readonly sortId: number;
   vertices: Float32Array;
   normals: Float32Array;
   indices: IndexArray;
@@ -37,6 +40,7 @@ export class Geometry {
   private vaoByProgram = new Map<ShaderProgram, WebGLVertexArrayObject>();
 
   constructor(vertices: Float32Array, normals: Float32Array, indices: IndexArray) {
+    this.sortId = Geometry.sortIdSeq++;
     this.vertices = vertices;
     this.normals = normals;
     this.indices = indices;

@@ -17,19 +17,28 @@ interface Plane {
   d: number;
 }
 
+const createPlane = (): Plane => ({ nx: 0, ny: 0, nz: 0, d: 0 });
+
 export class Frustum {
-  private planes: Plane[] = [];
+  /** 固定 6 面，每帧仅原地更新，避免 `setFromProjectionMatrix` 反复分配 plane 对象 */
+  private readonly planes: Plane[] = [
+    createPlane(),
+    createPlane(),
+    createPlane(),
+    createPlane(),
+    createPlane(),
+    createPlane(),
+  ];
 
   setFromProjectionMatrix(vpMatrix: Mat4): this {
     const m = vpMatrix;
-    this.planes = [
-      this.normalizePlane(m[3] + m[0], m[7] + m[4], m[11] + m[8], m[15] + m[12]), // left
-      this.normalizePlane(m[3] - m[0], m[7] - m[4], m[11] - m[8], m[15] - m[12]), // right
-      this.normalizePlane(m[3] + m[1], m[7] + m[5], m[11] + m[9], m[15] + m[13]), // bottom
-      this.normalizePlane(m[3] - m[1], m[7] - m[5], m[11] - m[9], m[15] - m[13]), // top
-      this.normalizePlane(m[3] + m[2], m[7] + m[6], m[11] + m[10], m[15] + m[14]), // near
-      this.normalizePlane(m[3] - m[2], m[7] - m[6], m[11] - m[10], m[15] - m[14]), // far
-    ];
+    const p = this.planes;
+    this.normalizePlaneInto(p[0], m[3] + m[0], m[7] + m[4], m[11] + m[8], m[15] + m[12]); // left
+    this.normalizePlaneInto(p[1], m[3] - m[0], m[7] - m[4], m[11] - m[8], m[15] - m[12]); // right
+    this.normalizePlaneInto(p[2], m[3] + m[1], m[7] + m[5], m[11] + m[9], m[15] + m[13]); // bottom
+    this.normalizePlaneInto(p[3], m[3] - m[1], m[7] - m[5], m[11] - m[9], m[15] - m[13]); // top
+    this.normalizePlaneInto(p[4], m[3] + m[2], m[7] + m[6], m[11] + m[10], m[15] + m[14]); // near
+    this.normalizePlaneInto(p[5], m[3] - m[2], m[7] - m[6], m[11] - m[10], m[15] - m[14]); // far
     return this;
   }
 
@@ -53,16 +62,18 @@ export class Frustum {
     return true;
   }
 
-  private normalizePlane(nx: number, ny: number, nz: number, d: number): Plane {
+  private normalizePlaneInto(out: Plane, nx: number, ny: number, nz: number, d: number): void {
     const len = Math.hypot(nx, ny, nz);
     if (len === 0) {
-      return { nx, ny, nz, d };
+      out.nx = nx;
+      out.ny = ny;
+      out.nz = nz;
+      out.d = d;
+      return;
     }
-    return {
-      nx: nx / len,
-      ny: ny / len,
-      nz: nz / len,
-      d: d / len,
-    };
+    out.nx = nx / len;
+    out.ny = ny / len;
+    out.nz = nz / len;
+    out.d = d / len;
   }
 }

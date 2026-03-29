@@ -3,7 +3,7 @@ import { Color } from "../common/color/color";
 import type { Scene } from "../scene/type";
 import type { RendererConfig } from "./type";
 import type { Mesh } from "../mesh";
-import { indexArrayToElementType } from "../geometry/base";
+import { indexArrayToElementType, type Geometry } from "../geometry/base";
 import type { Group } from "../group/type";
 import type { ShaderProgram } from "../common/program";
 import { Frustum } from "../utils/culling/frustum";
@@ -35,6 +35,10 @@ export class WebGLRenderer {
   private pixelRatio: number = 1;
   frustumCulling: boolean;
   private frustum: Frustum = new Frustum();
+  /** 每帧收集 Mesh 复用，避免 `[]` 分配 */
+  private meshScratch: Mesh[] = [];
+  /** 视锥剔除结果复用（仅 `frustumCulling` 为真时使用） */
+  private meshVisibleScratch: Mesh[] = [];
   private renderRafId: number | null = null;
   private pendingScene: Scene | null = null;
   private pendingCamera: Camera | null = null;
@@ -116,14 +120,15 @@ export class WebGLRenderer {
   // @timed()
   private cullMeshesByFrustum(camera: Camera, meshes: Mesh[]): Mesh[] {
     this.frustum.setFromProjectionMatrix(camera.matrix.vp);
-    const output: Mesh[] = [];
+    const out = this.meshVisibleScratch;
+    out.length = 0;
     for (let i = 0; i < meshes.length; i++) {
       const mesh = meshes[i];
       if (this.frustum.intersectsSphere(mesh.getWorldBoundingSphere())) {
-        output.push(mesh);
+        out.push(mesh);
       }
     }
-    return output;
+    return out;
   }
 
   // @timed()
@@ -135,17 +140,20 @@ export class WebGLRenderer {
     }
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    const meshes: Mesh[] = [];
+    const meshScratch = this.meshScratch;
+    meshScratch.length = 0;
     for (let i = 0; i < scene.children.length; i++) {
       const object = scene.children[i] as Mesh | Group;
       // 更新顶级节点的模型矩阵
       updateTopLevelModelMatrices(object);
       // 收集所有Mesh 只收集叶子节点
-      collectMeshes(scene.children[i] as Mesh | Group, meshes);
+      collectMeshes(scene.children[i] as Mesh | Group, meshScratch);
     }
 
     // 剔除视锥体外的Mesh
-    const visibleMeshes = this.frustumCulling ? this.cullMeshesByFrustum(camera, meshes) : meshes;
+    const visibleMeshes = this.frustumCulling
+      ? this.cullMeshesByFrustum(camera, meshScratch)
+      : meshScratch;
 
     // 按 ShaderProgram 分组 后续同一组内的连续渲染, 这样可以节省program切换的开销
     const groupByProgram = new Map<ShaderProgram, Mesh[]>();
@@ -158,6 +166,26 @@ export class WebGLRenderer {
         groupByProgram.set(sp, batch);
       }
       batch.push(mesh);
+    }
+
+    // 同一 program 内按 geometry 分组再展平，减少 VAO / bindVertexArray 切换
+    for (const batch of groupByProgram.values()) {
+      const byGeometry = new Map<Geometry, Mesh[]>();
+      for (let i = 0; i < batch.length; i++) {
+        const mesh = batch[i];
+        let g = byGeometry.get(mesh.geometry);
+        if (!g) {
+          g = [];
+          byGeometry.set(mesh.geometry, g);
+        }
+        g.push(mesh);
+      }
+      batch.length = 0;
+      for (const meshes of byGeometry.values()) {
+        for (let j = 0; j < meshes.length; j++) {
+          batch.push(meshes[j]);
+        }
+      }
     }
 
     // 遍历 program 分组 并进行渲染
