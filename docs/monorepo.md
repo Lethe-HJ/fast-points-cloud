@@ -12,7 +12,10 @@ mini-three/
 ├── .husky/                     # 全仓统一 Git hooks
 ├── docs/
 │   ├── monorepo.md
-│   └── commit-message.md       # Commit message 与 Conventional Commits 约定
+│   ├── commit-message.md       # Commit message 与 Conventional Commits 约定
+│   ├── getting-started.md      # 环境、安装、常用命令
+│   ├── quick-start.md          # 最小代码示例
+│   └── demos.md                # 示例应用与各 Demo 说明
 ├── packages/
 │   ├── webgl/                  # WebGL 子项目
 │   ├── webgpu/                 # WebGPU 子项目（当前为占位实现）
