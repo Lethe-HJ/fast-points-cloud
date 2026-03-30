@@ -1,7 +1,7 @@
 import { LitElement, html, css } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import "./content";
-import { demos } from "./config";
+import { demoShellManifest, demos } from "./config";
 
 const LAST_DEMO_KEY = "last-demo-id";
 
@@ -27,11 +27,19 @@ export interface DemoInfo {
   experiments: DemoExperiment[];
 }
 
+function shellToPlaceholderDemoItems(): DemoInfo[] {
+  return demoShellManifest
+    .filter((e) => e.showInMenu)
+    .map((e) => ({ ...e, experiments: [] }));
+}
+
 @customElement("demo-layout")
 export class DemoLayout extends LitElement {
   @property({ type: String }) activeId =
     localStorage.getItem(LAST_DEMO_KEY) ?? "demo1";
-  @state() private demoItems: DemoInfo[] = [];
+  @state() private demoItems: DemoInfo[] = shellToPlaceholderDemoItems();
+  @state() private demosLoading = true;
+  private loadStarted = false;
 
   static styles = css`
     :host {
@@ -77,27 +85,35 @@ export class DemoLayout extends LitElement {
     }
   `;
 
+  override connectedCallback() {
+    super.connectedCallback();
+    if (this.loadStarted) return;
+    this.loadStarted = true;
+    void this.loadDemoInfo();
+  }
+
   private async loadDemoInfo() {
-    const demoInfos: DemoInfo[] = [];
-    for (const demoId of demos) {
-      try {
-        const { demoInfo } = await import(`./${demoId}/index.ts`);
-        if (demoInfo.showInMenu) demoInfos.push(demoInfo);
-      } catch (error) {
-        console.warn(`Failed to load demo ${demoId}:`, error);
-      }
-    }
+    this.demosLoading = true;
+    const results = await Promise.all(
+      demos.map(async (demoId) => {
+        try {
+          const { demoInfo } = await import(`./${demoId}/index.ts`);
+          return demoInfo.showInMenu ? demoInfo : null;
+        } catch (error) {
+          console.warn(`Failed to load demo ${demoId}:`, error);
+          return null;
+        }
+      }),
+    );
+    const demoInfos = results.filter((x): x is DemoInfo => x != null);
     this.demoItems = demoInfos;
+    this.demosLoading = false;
     if (
       demoInfos.length > 0 &&
       !demoInfos.find((item) => item.id === this.activeId)
     ) {
       this.activeId = demoInfos[0].id;
     }
-  }
-
-  protected firstUpdated() {
-    this.loadDemoInfo();
   }
 
   private handleNavClick(item: DemoInfo) {
@@ -126,6 +142,7 @@ export class DemoLayout extends LitElement {
         <demo-content
           .demoId=${this.activeId}
           .demoInfo=${activeItem}
+          .demosLoading=${this.demosLoading}
         ></demo-content>
       </div>
     `;

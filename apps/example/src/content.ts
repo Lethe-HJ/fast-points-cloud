@@ -25,6 +25,8 @@ export class DemoContent extends LitElement {
   @property({ type: String }) demoId =
     localStorage.getItem(LAST_DEMO_KEY) ?? "demo1";
   @property({ attribute: false }) demoInfo: DemoInfo | null = null;
+  /** 父页是否仍在拉取各 demo 的 `index.ts` 元数据（与占位 `experiments: []` 区分） */
+  @property({ type: Boolean }) demosLoading = false;
   @state() private loading = true;
   @state() private error: string | null = null;
   /** 当前选中的小实验 {@link DemoExperiment.id} */
@@ -294,7 +296,7 @@ export class DemoContent extends LitElement {
       </div>
     `;
 
-    if (this.loading) {
+    if (this.loading && !this.demoInfo) {
       return html`
         <div class="demo-container">
           <div class="demo-card">
@@ -323,6 +325,16 @@ export class DemoContent extends LitElement {
       `;
     }
     if (!experiments.length) {
+      if (this.demosLoading) {
+        return html`
+          <div class="demo-container">
+            <div class="demo-card">
+              ${header}
+              <div class="loading">Loading...</div>
+            </div>
+          </div>
+        `;
+      }
       return html`
         <div class="demo-container">
           <div class="demo-card">
