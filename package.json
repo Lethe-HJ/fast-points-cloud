@@ -2,14 +2,16 @@
   "private": true,
   "scripts": {
     "prepare": "husky",
-    "check": "sh scripts/check.sh",
-    "typecheck": "sh scripts/typecheck.sh",
-    "lint": "sh scripts/lint.sh",
-    "format:check": "sh scripts/format-check.sh",
-    "lint:fix": "sh scripts/lint-fix.sh",
-    "format:fix": "sh scripts/format-fix.sh",
-    "fix": "sh scripts/fix.sh",
-    "example": "pnpm --filter @mini-three/example dev"
+    "check": "bash scripts/check.sh",
+    "typecheck": "bash scripts/typecheck.sh",
+    "lint": "bash scripts/lint.sh",
+    "format:check": "bash scripts/format-check.sh",
+    "lint:fix": "bash scripts/lint-fix.sh",
+    "format:fix": "bash scripts/format-fix.sh",
+    "fix": "bash scripts/fix.sh",
+    "example": "pnpm --filter @mini-three/example dev",
+    "postversion": "bash scripts/postversion.sh",
+    "deploy": "bash deploy/deploy.sh"
   },
   "dependencies": {
     "lit": "^3.3.2",

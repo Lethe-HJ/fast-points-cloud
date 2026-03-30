@@ -5,15 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "pnpm --filter @mini-three/webgl build && tsc --noEmit && vite build",
     "preview": "vite preview",
-    "check": "sh scripts/check.sh",
+    "check": "bash scripts/check.sh",
     "typecheck": "tsc --noEmit",
     "lint": "echo \"skip lint for example app\"",
     "lint:fix": "echo \"skip lint:fix for example app\"",
     "format:check": "oxfmt src --check",
     "format:fix": "oxfmt src",
-    "fix": "sh scripts/fix.sh"
+    "fix": "bash scripts/fix.sh"
   },
   "dependencies": {
     "@mini-three/webgl": "workspace:*"
