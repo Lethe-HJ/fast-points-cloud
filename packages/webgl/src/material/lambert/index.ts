@@ -1,6 +1,7 @@
-import { lambertShader, ShaderSource } from "../common/shader";
-import { Color } from "../common/color/color";
-import { Material } from "./base";
+import { ShaderSource } from "../../common/shader";
+import { Color } from "../../common/color/color";
+import { Material } from "../base";
+import { lambertShader } from "./shader";
 
 export interface MeshLambertMaterialConfig {
   color: Color | number;

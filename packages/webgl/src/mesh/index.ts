@@ -242,6 +242,7 @@ export class Mesh extends BaseObject {
         false,
         this.matrixUploadModel,
       );
+      if (__LOG__) console.log(`[Mesh] gl.uniformMatrix4fv: matrixUploadModel`);
     }
     if (this.matrixes.mvp.location) {
       this.matrixUploadMvp.set(mvpMatrix);
@@ -250,6 +251,7 @@ export class Mesh extends BaseObject {
         false,
         this.matrixUploadMvp,
       );
+      if (__LOG__) console.log(`[Mesh] gl.uniformMatrix4fv: matrixUploadMvp`);
     }
     if (this.matrixes.normal.location) {
       this.matrixUploadNormal.set(normalMatrix);
@@ -258,6 +260,8 @@ export class Mesh extends BaseObject {
         false,
         this.matrixUploadNormal,
       );
+      if (__LOG__)
+        console.log(`[Mesh] gl.uniformMatrix4fv: matrixUploadNormal`);
     }
   }
 

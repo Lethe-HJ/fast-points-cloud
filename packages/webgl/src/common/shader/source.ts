@@ -13,6 +13,7 @@ export class ShaderSource {
     fragment: FragmentCodeSource,
     unique?: ShaderSourceUnique,
   ) {
+    if (__LOG__) console.log(`[ShaderSource] new ${unique}`);
     this._vertex = vertex;
     this._fragment = fragment;
     this._unique = unique ?? ShaderSource.getUnique(vertex, fragment);

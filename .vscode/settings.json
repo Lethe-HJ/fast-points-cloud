@@ -10,6 +10,7 @@
     "oxlint",
     "Phong",
     "threejs",
+    "VITE",
     "webgl",
     "webgpu"
   ],

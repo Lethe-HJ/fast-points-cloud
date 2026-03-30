@@ -120,6 +120,9 @@ export class Camera {
   ): void {
     if (!skipUseProgram) sp.useProgram();
     const loc = sp.getUniformLocation("u_cameraPosition");
-    if (loc) gl.uniform3fv(loc, this._position.toArray());
+    if (loc) {
+      gl.uniform3fv(loc, this._position.toArray());
+      if (__LOG__) console.log(`[Camera] gl.uniform3fv`);
+    }
   }
 }

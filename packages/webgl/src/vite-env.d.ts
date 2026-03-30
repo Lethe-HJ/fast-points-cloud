@@ -5,6 +5,8 @@ interface ImportMetaEnv {
   readonly DEV: boolean;
   readonly PROD: boolean;
   readonly SSR: boolean;
+  readonly VITE_DEBUG?: string;
+  readonly VITE_LOG?: string;
 }
 interface ImportMeta {
   readonly env: ImportMetaEnv;

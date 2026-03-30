@@ -48,6 +48,7 @@ export class AmbientLight {
         number,
       ];
       gl.uniform3fv(loc, scaledColor);
+      if (__LOG__) console.log(`[AmbientLight] gl.uniform3fv`);
     }
   }
 }

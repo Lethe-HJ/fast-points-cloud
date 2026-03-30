@@ -1,3 +1,7 @@
 {
-  "recommendations": ["runem.lit-plugin", "oxc.oxc-vscode"]
+  "recommendations": [
+    "runem.lit-plugin",
+    "oxc.oxc-vscode",
+    "exodiusstudios.comment-anchors"
+  ]
 }

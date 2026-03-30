@@ -38,28 +38,50 @@ export class ShaderProgram {
     return `${glUnique}-${source.unique}` as ShaderProgramUnique;
   }
 
+  /**
+   * 切换当前 program
+   * 注意: useProgram对性能影响较大，尽量减少调用
+   * @returns
+   */
   useProgram(): void {
+    if (__LOG__)
+      console.log(`[ShaderProgram] gl.useProgram, unique: ${this.unique}`);
     const last = ShaderProgram.currentProgram.get(this.gl);
     // 微小优化 如果上一次的program和当前的program一致，在驱动层面仍然会return
     // 但是直接在js代码层面直接return 性能更好
     if (last === this.glProgram) return;
     this.gl.useProgram(this.glProgram);
     ShaderProgram.currentProgram.set(this.gl, this.glProgram);
-    if (__DEBUG__) {
-      console.log(`gl.useProgram, unique: ${this.unique}`);
-    }
   }
 
+  /**
+   * 获取 uniform 位置
+   * 注意: getUniformLocation对性能影响较大，尽量减少调用
+   * @param name
+   * @returns
+   */
   getUniformLocation(name: string): WebGLUniformLocation | null {
+    if (__LOG__)
+      console.log(`[ShaderProgram] getUniformLocation, name: ${name}`);
     // 缓存uniform位置 避免每次都调用gl.getUniformLocation查询位置
     const cache = this.uniformLocCache.get(name);
     if (cache !== undefined) return cache;
+    if (__LOG__)
+      console.log(`[ShaderProgram] gl.getUniformLocation, name: ${name}`);
     const loc = this.gl.getUniformLocation(this.glProgram, name);
     this.uniformLocCache.set(name, loc);
     return loc;
   }
 
+  /**
+   * 获取 attribute 位置
+   * 注意: getAttribLocation对性能影响较大，尽量减少调用
+   * @param name
+   * @returns
+   */
   getAttribLocation(name: string): number {
+    if (__LOG__)
+      console.log(`[ShaderProgram] getAttribLocation, name: ${name}`);
     return this.gl.getAttribLocation(this.glProgram, name);
   }
 
@@ -94,6 +116,7 @@ export class ShaderProgram {
     source: ShaderSource,
     unique: ShaderProgramUnique,
   ) {
+    if (__LOG__) console.log(`[ShaderProgram] constructor ${unique}`);
     this.gl = gl;
     this.unique = unique;
     const { vertex: vertexShaderSource, fragment: fragmentShaderSource } =

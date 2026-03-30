@@ -5,9 +5,13 @@
     },
   ],
   "settings": {
-    "cSpell.words": ["glslify"],
+    "cSpell.words": ["glslify", "VITE"],
   },
   "extensions": {
-    "recommendations": ["runem.lit-plugin", "oxc.oxc-vscode"],
+    "recommendations": [
+      "runem.lit-plugin",
+      "oxc.oxc-vscode",
+      "exodiusstudios.comment-anchors",
+    ],
   },
 }

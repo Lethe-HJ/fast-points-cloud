@@ -1,4 +1,8 @@
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { defineConfig, type ESBuildOptions, type Plugin } from "vite";
+
+const root = dirname(fileURLToPath(import.meta.url));
 
 type RollupOutputChunk = {
   type: "chunk";
@@ -59,6 +63,8 @@ function buildExperimentChunkUrlMap(bundle: Record<string, unknown>) {
 }
 
 export default defineConfig(({ mode }) => ({
+  /** 与 `.env` 放在 `src/` 下一致，否则默认只从 `apps/example/` 根目录加载 */
+  envDir: resolve(root, "src"),
   plugins: [injectExperimentChunkUrlMap()],
   esbuild: {
     legalComments: "none",

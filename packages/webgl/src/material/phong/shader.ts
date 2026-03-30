@@ -1,6 +1,7 @@
-import { ShaderSource } from "./source";
-import { OUTPUT_SCALE } from "./config";
-import { frag, vert } from "./base";
+import { ShaderSource } from "../../common/shader/source";
+import { OUTPUT_SCALE } from "../../common/shader/config";
+import { frag, vert } from "../../common/shader/base";
+import { pointLightDefineCodeSource, U_PointLight } from "../../light/point";
 
 export const phongShader = ShaderSource.create(
   vert`
@@ -41,31 +42,25 @@ export const phongShader = ShaderSource.create(
     };
     uniform Material u_material;
     uniform vec3 u_materialSpecular;
-    struct PointLight {
-      vec3 color;
-      vec3 position;
-      float constant;
-      float linear;
-      float quadratic;
-    };
-    uniform PointLight u_pointLight;
-    uniform float u_pointLightIntensity;
+
+    ${pointLightDefineCodeSource.code}
+
     #define OUTPUT_SCALE ${OUTPUT_SCALE}
     float linearToSrgb(float c) { return (c <= 0.0031308) ? c * 12.92 : 1.055 * pow(c, 1.0/2.4) - 0.055; }
     vec3 linearToSrgb(vec3 c) { return vec3(linearToSrgb(c.r), linearToSrgb(c.g), linearToSrgb(c.b)); }
     void main() {
       vec3 ambient = u_ambientLightColor * vec3(u_material.color);
       vec3 norm = normalize(v_normal);
-      vec3 lightDir = normalize(u_pointLight.position - v_fragPos);
+      vec3 lightDir = normalize(${U_PointLight.Position} - v_fragPos);
       float diff = max(dot(norm, lightDir), 0.0);
-      vec3 diffuse = diff * u_pointLight.color * vec3(u_material.color);
+      vec3 diffuse = diff * ${U_PointLight.Color} * vec3(u_material.color);
       vec3 viewDir = normalize(u_cameraPosition - v_fragPos);
       vec3 reflectDir = reflect(-lightDir, norm);
       float spec = pow(max(dot(viewDir, reflectDir), 0.0), u_material.shininess);
-      vec3 specular = u_materialSpecular * u_pointLight.color * spec;
-      float dist = length(u_pointLight.position - v_fragPos);
-      float attenuation = 1.0 / (u_pointLight.constant + u_pointLight.linear * dist + u_pointLight.quadratic * dist * dist);
-      vec3 result = ambient + (diffuse + specular) * attenuation * u_pointLightIntensity;
+      vec3 specular = u_materialSpecular * ${U_PointLight.Color} * spec;
+      float dist = length(${U_PointLight.Position} - v_fragPos);
+      float attenuation = 1.0 / (${U_PointLight.Constant} + ${U_PointLight.Linear} * dist + ${U_PointLight.Quadratic} * dist * dist);
+      vec3 result = ambient + (diffuse + specular) * attenuation * ${U_PointLight.Intensity};
       gl_FragColor = vec4(linearToSrgb(result * OUTPUT_SCALE), 1.0);
     }
   `,

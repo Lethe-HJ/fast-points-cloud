@@ -6,6 +6,8 @@ import dts from "vite-plugin-dts";
 const root = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig(({ mode }) => ({
+  /** 与 `src/.env` 位置一致 */
+  envDir: resolve(root, "src"),
   plugins: [
     dts({
       root,

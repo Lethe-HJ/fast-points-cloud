@@ -2,15 +2,16 @@
 
 一个从零实现的轻量级 WebGL 3D 渲染引擎，参考 Three.js API 设计，用于学习和理解现代图形渲染管线的核心原理。
 
+## 在线演示
+
+示例应用（对应 `apps/example`）：[在线演示](http://81.71.84.163/)
+交互说明见 [docs/demos.md](./docs/demos.md)。
+
 ## 展示
 
 ![](./docs/img/2026-03-30-14-13-58.png)
 ![](./docs/img/2026-03-30-14-15-39.png)
 ![](./docs/img/2026-03-30-14-16-34.png)
-
-## 在线演示
-
-示例应用（对应 `apps/example`）：[http://81.71.84.163/](http://81.71.84.163/) — 交互说明见 [docs/demos.md](./docs/demos.md)。
 
 ## Monorepo 说明
 
