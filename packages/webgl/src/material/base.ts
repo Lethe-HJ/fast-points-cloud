@@ -1,11 +1,27 @@
 import { ShaderSource } from "../common/shader";
 import { Color } from "../common/color/color";
 import { ShaderProgram } from "../common/program";
+import { UniformName } from "../utils/type/gl";
 
 export interface MaterialConfig {
   color: string | number | Color;
   [key: string]: any;
 }
+
+/**
+ * u_material - 材质结构体名称
+ */
+const _U_Material = "u_material" as UniformName;
+const _U__Color = "color" as UniformName;
+
+const U_Material = {
+  /**
+   * color - 材质颜色
+   */
+  Color: `${_U_Material}.${_U__Color}` as UniformName,
+} as const;
+
+type U_Material = (typeof U_Material)[keyof typeof U_Material];
 
 /**
  * 材质基类
@@ -66,7 +82,7 @@ export abstract class Material {
     if (__LOG__) console.log(`[Material] attach`);
     const sp = this.ensureShaderProgram(gl);
     if (!skipUseProgram) sp.useProgram();
-    const locColor = sp.getUniformLocation("u_material.color");
+    const locColor = sp.getUniformLocation(U_Material.Color);
     if (locColor && this._color) {
       gl.uniform3fv(locColor, this._color.toArray());
       if (__LOG__) console.log(`[Material] gl.uniform3fv`);

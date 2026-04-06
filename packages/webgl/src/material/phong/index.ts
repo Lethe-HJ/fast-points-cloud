@@ -1,7 +1,7 @@
 import { ShaderSource } from "../../common/shader";
 import { Color } from "../../common/color/color";
 import { Material, MaterialConfig } from "../base";
-import { phongShader } from "./shader";
+import { phongShader, U_Material } from "./shader";
 
 export interface MeshPhongMaterialConfig extends MaterialConfig {
   color: Color | number;
@@ -67,7 +67,7 @@ export class MeshPhongMaterial extends Material {
       gl.uniform1f(locShininess, shininess);
       if (__LOG__) console.log(`[MeshPhongMaterial] gl.uniform1f`);
     }
-    const locSpecular = sp.getUniformLocation("u_materialSpecular");
+    const locSpecular = sp.getUniformLocation(U_Material.Specular);
     if (locSpecular) {
       const spec = this._specular ?? Color.fromNumber(DEFAULT_SPECULAR);
       gl.uniform3fv(locSpecular, spec.toArray());

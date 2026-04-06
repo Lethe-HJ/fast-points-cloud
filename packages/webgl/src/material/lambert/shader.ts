@@ -1,7 +1,40 @@
 import { ShaderSource } from "../../common/shader/source";
 import { OUTPUT_SCALE } from "../../common/shader/config";
-import { frag, vert } from "../../common/shader/base";
+import { frag, glsl, vert } from "../../common/shader/base";
 import { pointLightDefineCodeSource, U_PointLight } from "../../light/point";
+import { UniformName } from "../../utils/type/gl";
+
+/**
+ * u_material - 材质结构体名称
+ */
+const _U_Material = "u_material" as UniformName;
+const _U__Color = "color" as UniformName;
+
+const U_Material = {
+  /**
+   * color - 材质颜色
+   */
+  Color: `${_U_Material}.${_U__Color}` as UniformName,
+} as const;
+
+type U_Material = (typeof U_Material)[keyof typeof U_Material];
+
+/**
+ * 材质结构体定义代码
+ *
+ * ```glsl
+ * struct Material {
+ *   vec3 color;
+ * };
+ * uniform Material u_material;
+ * ```
+ */
+const lambertMaterialDefineCodeSource = glsl`
+  struct Material {
+    vec3 ${_U__Color};
+  };
+  uniform Material ${_U_Material};
+`;
 
 export const lambertShader = ShaderSource.create(
   vert`
@@ -17,19 +50,16 @@ export const lambertShader = ShaderSource.create(
 
     varying vec4 v_color; // 输出颜色
 
-    // 材质结构体
-    struct Material {
-      vec3 color;
-      float shininess;
-    };
-    uniform Material u_material;
+    // 材质结构体定义代码
+    // 材质结构体实例化代码
+    ${lambertMaterialDefineCodeSource.code}
 
     // 点光源结构体定义代码
     // 点光源结构体实例化代码
     ${pointLightDefineCodeSource.code}
 
     void main() {
-      vec4 color = vec4(u_material.color, 1.0);
+      vec4 color = vec4(${U_Material.Color}, 1.0);
       vec4 vertexPosition = u_mvpMatrix * a_position;
       vec4 worldPosition = u_modelMatrix * a_position;
       vec3 lightDirection = normalize(${U_PointLight.Position} - worldPosition.xyz);

@@ -1,8 +1,8 @@
 import type { ShaderProgram } from "../common/program";
 import { Color } from "../common/color/color";
 import { Vector3 } from "../common/math/vector/vector3";
-import { Brand } from "../utils/type/brand";
 import { glsl } from "../common/shader/base";
+import { UniformName } from "../utils/type/gl";
 
 export class PointLight {
   name: "PointLight";
@@ -126,8 +126,6 @@ export class PointLight {
     }
   }
 }
-
-export type UniformName = Brand<string, "UniformName">;
 
 /**
  *  NOTE 命名约定：
