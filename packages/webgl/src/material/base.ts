@@ -23,11 +23,20 @@ const U_Material = {
 
 type U_Material = (typeof U_Material)[keyof typeof U_Material];
 
+type MaterialNeedUpdate = {
+  color: boolean;
+};
+
 /**
  * 材质基类
  */
 export abstract class Material {
   private _shaderProgram: ShaderProgram | undefined = undefined;
+  private _offProgramActivated: (() => void) | undefined;
+
+  private readonly needUpdateMap = new Map<ShaderProgram, MaterialNeedUpdate>();
+  private _orphanColorDirty = true;
+
   protected _color: Color | undefined = undefined;
   protected config: MaterialConfig;
   protected shaderSource: ShaderSource | undefined = undefined;
@@ -57,6 +66,24 @@ export abstract class Material {
 
   set color(value: Color) {
     this._color = value;
+    this.markColorDirty();
+  }
+
+  protected markColorDirty(): void {
+    this._orphanColorDirty = true;
+    for (const nu of this.needUpdateMap.values()) {
+      nu.color = true;
+    }
+  }
+
+  protected getNeedUpdateFor(sp: ShaderProgram): MaterialNeedUpdate {
+    let nu = this.needUpdateMap.get(sp);
+    if (!nu) {
+      nu = { color: this._orphanColorDirty };
+      this.needUpdateMap.set(sp, nu);
+      this._orphanColorDirty = false;
+    }
+    return nu;
   }
 
   /**
@@ -74,6 +101,25 @@ export abstract class Material {
   }
 
   /**
+   * 与 Light/Camera 一致：仅当某 program 尚未登记时插入全量脏（切换回已登记 program 不重复打标）。
+   */
+  protected onProgramActivatedForUniforms(sp: ShaderProgram): void {
+    if (this._shaderProgram !== sp) return;
+    let nu = this.needUpdateMap.get(sp);
+    if (!nu) {
+      nu = { color: true };
+      this.needUpdateMap.set(sp, nu);
+    }
+  }
+
+  private ensureProgramActivatedSubscription(gl: WebGL2RenderingContext): void {
+    if (this._offProgramActivated) return;
+    this._offProgramActivated = ShaderProgram.onProgramActivated(gl, (p) =>
+      this.onProgramActivatedForUniforms(p),
+    );
+  }
+
+  /**
    * 附加材质相关状态到 WebGL 上下文
    * @param gl
    * @param skipUseProgram 是否跳过切换当前 program
@@ -81,11 +127,22 @@ export abstract class Material {
   attach(gl: WebGL2RenderingContext, skipUseProgram = false): void {
     if (__LOG__) console.log(`[Material] attach`);
     const sp = this.ensureShaderProgram(gl);
+    this.ensureProgramActivatedSubscription(gl);
     if (!skipUseProgram) sp.useProgram();
-    const locColor = sp.getUniformLocation(U_Material.Color);
-    if (locColor && this._color) {
-      gl.uniform3fv(locColor, this._color.toArray());
-      if (__LOG__) console.log(`[Material] gl.uniform3fv`);
+    const needUpdate = this.getNeedUpdateFor(sp);
+    if (needUpdate.color && this._color) {
+      const locColor = sp.getUniformLocation(U_Material.Color);
+      if (locColor) {
+        gl.uniform3fv(locColor, this._color.toArray());
+        needUpdate.color = false;
+        if (__LOG__) console.log(`[Material] gl.uniform3fv u_material.color`);
+      }
+    }
+  }
+
+  clearUniformNeedUpdate(): void {
+    for (const nu of this.needUpdateMap.values()) {
+      nu.color = false;
     }
   }
 

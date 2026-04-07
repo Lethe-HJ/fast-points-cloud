@@ -1,13 +1,14 @@
 import type { Camera } from "../camera/type";
+import type { Material } from "../material/base";
 import { Color } from "../common/color/color";
 import type { Scene } from "../scene/type";
 import type { RendererConfig } from "./type";
 import type { Mesh } from "../mesh";
 import { indexArrayToElementType, type Geometry } from "../geometry/base";
 import type { Group } from "../group/type";
+import { Light } from "../light/base";
 import type { ShaderProgram } from "../common/program";
 import { Frustum } from "../utils/culling/frustum";
-import { timed } from "../utils/decorators";
 
 /** 仅收集 Mesh，不更新矩阵（矩阵由顶层 updateTopLevelModelMatrices 已算好） */
 const collectMeshes = (obj: Mesh | Group, meshes: Mesh[]) => {
@@ -193,8 +194,8 @@ export class WebGLRenderer {
       sp.useProgram();
       for (let j = 0; j < scene.objects.length; j++) {
         const obj = scene.objects[j];
-        if (obj.name === "AmbientLight" || obj.name === "PointLight") {
-          obj.attach(gl, sp);
+        if (obj instanceof Light) {
+          obj.attach(gl, sp, true);
         }
       }
       camera.attach(gl, sp, true);
@@ -210,6 +211,27 @@ export class WebGLRenderer {
           0,
         );
       }
+    }
+    this.clearUniformNeedUpdate(camera, scene, visibleMeshes);
+  }
+
+  clearUniformNeedUpdate(
+    camera: Camera,
+    scene: Scene,
+    visibleMeshes: Mesh[],
+  ): void {
+    // 本帧渲染结束：清空各对象 needUpdateMap 中全部 program 的 uniform dirty（不限于本帧绑定的 program）
+    camera.clearUniformNeedUpdate();
+    for (let j = 0; j < scene.objects.length; j++) {
+      const obj = scene.objects[j];
+      if ("clearUniformNeedUpdate" in obj) obj.clearUniformNeedUpdate();
+    }
+    const materialsSeen = new Set<Material>();
+    for (let i = 0; i < visibleMeshes.length; i++) {
+      const mat = visibleMeshes[i].material;
+      if (materialsSeen.has(mat)) continue;
+      materialsSeen.add(mat);
+      mat.clearUniformNeedUpdate();
     }
   }
 }

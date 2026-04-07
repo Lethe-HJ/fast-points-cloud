@@ -31,6 +31,37 @@ export class ShaderProgram {
     WebGLUniformLocation | null
   >();
 
+  /** link 后 attribute 位置不变，按 name 缓存避免重复查询 */
+  private readonly attribLocCache = new Map<string, number>();
+
+  /** `gl.useProgram` 实际发生切换后的监听（同一 program 重复绑定不会触发） */
+  private static readonly programActivatedListeners = new WeakMap<
+    WebGL2RenderingContext,
+    Set<(sp: ShaderProgram) => void>
+  >();
+
+  /**
+   * 注册：当前上下文在切换到**另一套** program 之后回调（已在 `gl.useProgram` 之后）。
+   * @returns 取消订阅
+   */
+  static onProgramActivated(
+    gl: WebGL2RenderingContext,
+    listener: (sp: ShaderProgram) => void,
+  ): () => void {
+    let set = ShaderProgram.programActivatedListeners.get(gl);
+    if (!set) {
+      set = new Set();
+      ShaderProgram.programActivatedListeners.set(gl, set);
+    }
+    set.add(listener);
+    return () => {
+      set!.delete(listener);
+      if (set!.size === 0) {
+        ShaderProgram.programActivatedListeners.delete(gl);
+      }
+    };
+  }
+
   static getUnique(
     glUnique: GLUnique,
     source: ShaderSource,
@@ -52,6 +83,15 @@ export class ShaderProgram {
     if (last === this.glProgram) return;
     this.gl.useProgram(this.glProgram);
     ShaderProgram.currentProgram.set(this.gl, this.glProgram);
+    ShaderProgram.notifyProgramActivated(this);
+  }
+
+  private static notifyProgramActivated(sp: ShaderProgram): void {
+    const set = ShaderProgram.programActivatedListeners.get(sp.gl);
+    if (!set) return;
+    for (const fn of set) {
+      fn(sp);
+    }
   }
 
   /**
@@ -61,8 +101,8 @@ export class ShaderProgram {
    * @returns
    */
   getUniformLocation(name: string): WebGLUniformLocation | null {
-    if (__LOG__)
-      console.log(`[ShaderProgram] getUniformLocation, name: ${name}`);
+    // if (__LOG__)
+    //   console.log(`[ShaderProgram] getUniformLocation, name: ${name}`);
     // 缓存uniform位置 避免每次都调用gl.getUniformLocation查询位置
     const cache = this.uniformLocCache.get(name);
     if (cache !== undefined) return cache;

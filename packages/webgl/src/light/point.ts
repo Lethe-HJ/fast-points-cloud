@@ -1,17 +1,41 @@
-import type { ShaderProgram } from "../common/program";
+import { ShaderProgram } from "../common/program";
 import { Color } from "../common/color/color";
 import { Vector3 } from "../common/math/vector/vector3";
 import { glsl } from "../common/shader/base";
 import { UniformName } from "../utils/type/gl";
+import { Light } from "./base";
 
-export class PointLight {
-  name: "PointLight";
+type PointLightNeedUpdate = {
+  position: boolean;
+  color: boolean;
+  intensity: boolean;
+  attenuation: boolean;
+};
+
+export class PointLight extends Light {
   private _position: Vector3;
+
   private _color: Color;
+
   private _intensity: number;
+
   private _distance: number;
+
   private _decay: number;
+
   private _attenuation: [number, number, number];
+
+  private readonly needUpdateMap = new Map<
+    ShaderProgram,
+    PointLightNeedUpdate
+  >();
+
+  private _orphanPositionDirty = true;
+  private _orphanColorDirty = true;
+  private _orphanIntensityDirty = true;
+  private _orphanAttenuationDirty = true;
+
+  private _offProgramActivated: (() => void) | undefined;
 
   constructor(
     color: string | number,
@@ -19,7 +43,7 @@ export class PointLight {
     distance: number = 0,
     decay: number = 0,
   ) {
-    this.name = "PointLight";
+    super("PointLight");
     this._position = new Vector3();
     this._color = new Color(color);
     this._intensity = intensity;
@@ -34,6 +58,7 @@ export class PointLight {
 
   set position(value: Vector3) {
     this._position = value;
+    this.markPositionDirty();
   }
 
   get color(): Color {
@@ -42,6 +67,7 @@ export class PointLight {
 
   set color(value: Color) {
     this._color = value;
+    this.markColorDirty();
   }
 
   get intensity(): number {
@@ -50,6 +76,7 @@ export class PointLight {
 
   set intensity(value: number) {
     this._intensity = value;
+    this.markIntensityDirty();
   }
 
   get distance(): number {
@@ -58,6 +85,7 @@ export class PointLight {
 
   set distance(value: number) {
     this._distance = value;
+    this.markAttenuationDirty();
   }
 
   get decay(): number {
@@ -66,63 +94,174 @@ export class PointLight {
 
   set decay(value: number) {
     this._decay = value;
+    this.markAttenuationDirty();
   }
 
   setPosition(x: number, y: number, z: number): this {
     this._position.set(x, y, z);
+    this.markPositionDirty();
     return this;
   }
 
   setColor(color: string | number): this {
     this._color = new Color(color);
+    this.markColorDirty();
     return this;
   }
 
   setIntensity(intensity: number): this {
     this._intensity = intensity;
+    this.markIntensityDirty();
     return this;
   }
 
   setDistance(distance: number): this {
     this._distance = distance;
+    this.markAttenuationDirty();
     return this;
   }
 
   setDecay(decay: number): this {
     this._decay = decay;
+    this.markAttenuationDirty();
     return this;
   }
 
-  attach(gl: WebGL2RenderingContext, sp: ShaderProgram): void {
-    const locPos = sp.getUniformLocation(U_PointLight.Position);
-    const locColor = sp.getUniformLocation(U_PointLight.Color);
-    const locConst = sp.getUniformLocation(U_PointLight.Constant);
-    const locLinear = sp.getUniformLocation(U_PointLight.Linear);
-    const locQuadratic = sp.getUniformLocation(U_PointLight.Quadratic);
-    const locIntensity = sp.getUniformLocation(U_PointLight.Intensity);
-    if (locPos) {
-      gl.uniform3fv(locPos, this._position.toArray());
-      if (__LOG__) console.log(`[PointLight] gl.uniform3fv`);
+  private markPositionDirty(): void {
+    this._orphanPositionDirty = true;
+    for (const nu of this.needUpdateMap.values()) {
+      nu.position = true;
     }
-    if (locColor) {
-      gl.uniform3fv(locColor, this._color.toArray());
-      if (__LOG__) console.log(`[PointLight] gl.uniform3fv`);
+  }
+
+  private markColorDirty(): void {
+    this._orphanColorDirty = true;
+    for (const nu of this.needUpdateMap.values()) {
+      nu.color = true;
     }
-    if (locConst) {
-      gl.uniform1f(locConst, this._attenuation[0]);
-      if (__LOG__) console.log(`[PointLight] gl.uniform1f`);
+  }
+
+  private markIntensityDirty(): void {
+    this._orphanIntensityDirty = true;
+    for (const nu of this.needUpdateMap.values()) {
+      nu.intensity = true;
     }
-    if (locLinear) {
-      gl.uniform1f(locLinear, this._attenuation[1]);
-      if (__LOG__) console.log(`[PointLight] gl.uniform1f`);
+  }
+
+  private markAttenuationDirty(): void {
+    this._orphanAttenuationDirty = true;
+    for (const nu of this.needUpdateMap.values()) {
+      nu.attenuation = true;
     }
-    if (locQuadratic) {
-      gl.uniform1f(locQuadratic, this._attenuation[2]);
-      if (__LOG__) console.log(`[PointLight] gl.uniform1f`);
+  }
+
+  private getNeedUpdateFor(sp: ShaderProgram): PointLightNeedUpdate {
+    let nu = this.needUpdateMap.get(sp);
+    if (!nu) {
+      nu = {
+        position: this._orphanPositionDirty,
+        color: this._orphanColorDirty,
+        intensity: this._orphanIntensityDirty,
+        attenuation: this._orphanAttenuationDirty,
+      };
+      this.needUpdateMap.set(sp, nu);
+      this._orphanPositionDirty = false;
+      this._orphanColorDirty = false;
+      this._orphanIntensityDirty = false;
+      this._orphanAttenuationDirty = false;
     }
-    if (locIntensity) {
-      gl.uniform1f(locIntensity, this._intensity);
-      if (__LOG__) console.log(`[PointLight] gl.uniform1f`);
+    return nu;
+  }
+
+  private ensureProgramActivatedSubscription(gl: WebGL2RenderingContext): void {
+    if (this._offProgramActivated) return;
+    this._offProgramActivated = ShaderProgram.onProgramActivated(
+      gl,
+      (sp: ShaderProgram) => {
+        let nu = this.needUpdateMap.get(sp);
+        if (!nu) {
+          nu = {
+            position: true,
+            color: true,
+            intensity: true,
+            attenuation: true,
+          };
+          this.needUpdateMap.set(sp, nu);
+        }
+      },
+    );
+  }
+
+  attach(
+    gl: WebGL2RenderingContext,
+    sp: ShaderProgram,
+    skipUseProgram = false,
+  ): void {
+    this.ensureProgramActivatedSubscription(gl);
+    if (!skipUseProgram) sp.useProgram();
+
+    const nu = this.getNeedUpdateFor(sp);
+
+    if (nu.position) {
+      const locPos = sp.getUniformLocation(U_PointLight.Position);
+      if (locPos) {
+        gl.uniform3fv(locPos, this._position.toArray());
+        nu.position = false;
+        if (__LOG__)
+          console.log(`[PointLight] gl.uniform3fv u_pointLight.position`);
+      }
+    }
+    if (nu.color) {
+      const locColor = sp.getUniformLocation(U_PointLight.Color);
+      if (locColor) {
+        gl.uniform3fv(locColor, this._color.toArray());
+        nu.color = false;
+        if (__LOG__)
+          console.log(`[PointLight] gl.uniform3fv u_pointLight.color`);
+      }
+    }
+    const needAtten = nu.attenuation || nu.intensity;
+    if (needAtten) {
+      const locConst = sp.getUniformLocation(U_PointLight.Constant);
+      if (locConst) {
+        gl.uniform1f(locConst, this._attenuation[0]);
+        nu.attenuation = false;
+        if (__LOG__)
+          console.log(`[PointLight] gl.uniform1f u_pointLight.constant`);
+      }
+      const locLinear = sp.getUniformLocation(U_PointLight.Linear);
+      if (locLinear) {
+        gl.uniform1f(locLinear, this._attenuation[1]);
+        nu.attenuation = false;
+        if (__LOG__)
+          console.log(`[PointLight] gl.uniform1f u_pointLight.linear`);
+      }
+      const locQuadratic = sp.getUniformLocation(U_PointLight.Quadratic);
+      if (locQuadratic) {
+        gl.uniform1f(locQuadratic, this._attenuation[2]);
+        nu.attenuation = false;
+        if (__LOG__)
+          console.log(`[PointLight] gl.uniform1f u_pointLight.quadratic`);
+      }
+      const locIntensity = sp.getUniformLocation(U_PointLight.Intensity);
+      if (locIntensity) {
+        gl.uniform1f(locIntensity, this._intensity);
+        nu.intensity = false;
+        if (__LOG__)
+          console.log(`[PointLight] gl.uniform1f u_pointLight.intensity`);
+      }
+      if (locConst && locLinear && locQuadratic) {
+        nu.attenuation = false;
+      }
+    }
+  }
+
+  override clearUniformNeedUpdate(): void {
+    for (const nu of this.needUpdateMap.values()) {
+      nu.position = false;
+      nu.color = false;
+      nu.intensity = false;
+      nu.attenuation = false;
     }
   }
 }
