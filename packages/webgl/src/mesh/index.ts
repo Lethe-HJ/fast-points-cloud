@@ -8,6 +8,11 @@ import { ObjectType } from "../common/object/type";
 import type { BoundingSphere } from "../utils/culling/frustum";
 import { MeshMatrixSet } from "./type";
 
+type MeshNeedUpdate = {
+  /** model / 父级变化后需重算 mvp、normal */
+  derived: boolean;
+};
+
 export class Mesh extends BaseObject {
   name: typeof ObjectType.Mesh;
   geometry: Geometry;
@@ -18,15 +23,14 @@ export class Mesh extends BaseObject {
   private readonly matrixUploadModel = new Float32Array(16);
   private readonly matrixUploadMvp = new Float32Array(16);
   private readonly matrixUploadNormal = new Float32Array(16);
+  private readonly needUpdate: MeshNeedUpdate = { derived: true };
+  /** 上次参与 derived 计算的 `camera.matrix.vp` 引用（`Camera.updateMatrix` 会替换数组） */
+  private lastDerivedCameraVpRef: Mat4 | null = null;
   /** 与 `worldBoundingSphereCache` 对应的 model 矩阵快照（`multiply` 每帧新数组，故用数值比较） */
   private readonly worldBoundingSphereModelSnapshot = new Float32Array(16);
   /** local 包围球 center xyz + radius，与 geometry 缓存一并比对 */
   private readonly worldBoundingSphereLocalSnapshot = new Float32Array(4);
   private worldBoundingSphereCache: BoundingSphere | null = null;
-  /** 上一帧 `updateMatrix` 结束时的 model / vp，用于跳过未变时的 multiply / inverse */
-  private readonly lastUpdateMatrixModel = new Float32Array(16);
-  private readonly lastUpdateMatrixVp = new Float32Array(16);
-  private lastUpdateMatrixSnapshotValid = false;
   /** 与 `updateModelMatrix` 中 TRS 快照比对，未变则跳过 local 矩阵重建 */
   private readonly lastModelTransform = {
     px: Number.NaN,
@@ -193,6 +197,7 @@ export class Mesh extends BaseObject {
       this.matrixes.model.value = parentModel
         ? m4.multiply(parentModel, this.matrixes.localModel)
         : this.matrixes.localModel;
+      this.needUpdate.derived = true;
     }
 
     this.lastParentWorldPresent = hasParent;
@@ -201,41 +206,35 @@ export class Mesh extends BaseObject {
     }
   }
 
-  private mat4EqualsSnapshot(m: Mat4, snap: Float32Array): boolean {
-    for (let i = 0; i < 16; i++) {
-      if (m[i] !== snap[i]) return false;
-    }
-    return true;
-  }
-
-  private saveUpdateMatrixSnapshot(model: Mat4, vp: Mat4): void {
-    for (let i = 0; i < 16; i++) {
-      this.lastUpdateMatrixModel[i] = model[i];
-      this.lastUpdateMatrixVp[i] = vp[i];
-    }
-    this.lastUpdateMatrixSnapshotValid = true;
-  }
-
   updateMatrix(gl: WebGL2RenderingContext, camera: Camera): void {
     const modelMatrix = this.matrixes.model.value!;
     const vp = camera.matrix.vp;
     let mvpMatrix: Mat4;
     let normalMatrix: Mat4;
-    const unchanged =
-      this.lastUpdateMatrixSnapshotValid &&
-      this.mat4EqualsSnapshot(modelMatrix, this.lastUpdateMatrixModel) &&
-      this.mat4EqualsSnapshot(vp, this.lastUpdateMatrixVp);
-    if (!unchanged) {
+    // NOTE  mvp / normal 不是“源数据”，而是由其他矩阵计算出来的结果，所以叫“派生矩阵”（derived matrix）
+    // 只有在派生矩阵被标记脏、相机 VP 引用变化，或缓存缺失时才重新计算。
+    const needUpdateDerived =
+      this.needUpdate.derived ||
+      this.lastDerivedCameraVpRef !== vp ||
+      !this.matrixes.mvp.value ||
+      !this.matrixes.normal.value;
+    if (needUpdateDerived) {
+      // MVP = VP * Model，用于把顶点从模型空间变换到裁剪空间。
       mvpMatrix = m4.multiply(vp, modelMatrix);
       this.matrixes.mvp.value = mvpMatrix;
+      // 法线矩阵为 Model 的逆转置，用于在存在缩放时保持法线方向正确。
       normalMatrix = m4.transpose(m4.inverse(modelMatrix));
       this.matrixes.normal.value = normalMatrix;
-      this.saveUpdateMatrixSnapshot(modelMatrix, vp);
+      // 记录本次使用的 VP，并清除派生矩阵脏标记，避免下一帧重复计算。
+      this.lastDerivedCameraVpRef = vp;
+      this.needUpdate.derived = false;
     } else {
+      // 命中缓存，直接复用上次计算结果。
       mvpMatrix = this.matrixes.mvp.value!;
       normalMatrix = this.matrixes.normal.value!;
     }
     if (this.matrixes.model.location) {
+      // 先拷贝到复用的 TypedArray，再上传 uniform，避免临时分配。
       this.matrixUploadModel.set(modelMatrix);
       gl.uniformMatrix4fv(
         this.matrixes.model.location,
@@ -245,6 +244,7 @@ export class Mesh extends BaseObject {
       if (__LOG__) console.log(`[Mesh] gl.uniformMatrix4fv: matrixUploadModel`);
     }
     if (this.matrixes.mvp.location) {
+      // 上传 MVP 矩阵，供顶点着色器完成位置变换。
       this.matrixUploadMvp.set(mvpMatrix);
       gl.uniformMatrix4fv(
         this.matrixes.mvp.location,
@@ -254,6 +254,7 @@ export class Mesh extends BaseObject {
       if (__LOG__) console.log(`[Mesh] gl.uniformMatrix4fv: matrixUploadMvp`);
     }
     if (this.matrixes.normal.location) {
+      // 上传法线矩阵，供光照计算使用。
       this.matrixUploadNormal.set(normalMatrix);
       gl.uniformMatrix4fv(
         this.matrixes.normal.location,

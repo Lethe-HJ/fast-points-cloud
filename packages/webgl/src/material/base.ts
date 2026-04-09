@@ -125,7 +125,7 @@ export abstract class Material {
    * @param skipUseProgram 是否跳过切换当前 program
    */
   attach(gl: WebGL2RenderingContext, skipUseProgram = false): void {
-    if (__LOG__) console.log(`[Material] attach`);
+    // if (__LOG__) console.log(`[Material] attach`);
     const sp = this.ensureShaderProgram(gl);
     this.ensureProgramActivatedSubscription(gl);
     if (!skipUseProgram) sp.useProgram();

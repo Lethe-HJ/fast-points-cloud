@@ -44,24 +44,18 @@ export class WebGLRenderer {
   private pendingScene: Scene | null = null;
   private pendingCamera: Camera | null = null;
 
-  constructor(config: RendererConfig | WebGL2RenderingContext) {
-    let gl: WebGL2RenderingContext | null = null;
-    if (config instanceof WebGL2RenderingContext) {
-      gl = config;
-      this.frustumCulling = true;
-    } else {
-      const canvas = config.canvas;
-      if (!canvas) {
-        throw new Error("Canvas is required");
-      }
-      gl = canvas.getContext("webgl2", {
-        antialias: config.antialias ?? true,
-      });
-      if (!gl) {
-        throw new Error("WebGL2 not supported");
-      }
-      this.frustumCulling = config.frustumCulling ?? true;
+  constructor(config: RendererConfig) {
+    const canvas = config.canvas;
+    if (!canvas) {
+      throw new Error("Canvas is required");
     }
+    const gl = canvas.getContext("webgl2", {
+      antialias: config.antialias ?? true,
+    });
+    if (!gl) {
+      throw new Error("WebGL2 not supported");
+    }
+    this.frustumCulling = config.frustumCulling ?? true;
     this.gl = gl;
     this.gl.enable(gl.DEPTH_TEST);
     this.gl.clearColor(1, 1, 1, 1); // 与 Three.js scene.background 白色一致
@@ -213,6 +207,7 @@ export class WebGLRenderer {
       }
     }
     this.clearUniformNeedUpdate(camera, scene, visibleMeshes);
+    if (__LOG__) console.log(`________________________`);
   }
 
   clearUniformNeedUpdate(

@@ -256,6 +256,15 @@ export class PointLight extends Light {
     }
   }
 
+  /**
+   * NOTE override 表示覆盖父类里已有的同名方法 作用如下:
+   * 1. 读代码更清楚 一眼能看出这不是新方法 而是重写基类的方法
+   * 2. 编译期检查 避免基类的对应方法签名变动时 子类会报错
+   */
+
+  /**
+   * 清空所有 uniform 的 dirty 标志
+   */
   override clearUniformNeedUpdate(): void {
     for (const nu of this.needUpdateMap.values()) {
       nu.position = false;
